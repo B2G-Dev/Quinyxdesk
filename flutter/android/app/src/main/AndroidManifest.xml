@@ -23,6 +23,7 @@
         <!-- Launcher Quinyx: necessario no Android 11+ para o setPackage do broadcast de sessao
              remota resolver (notifyLauncherRemoteSession em MainService). -->
         <package android:name="br.com.quinyx.launcher" />
+        <package android:name="com.quinyx.launcher.display" />
     </queries>
 
     <application

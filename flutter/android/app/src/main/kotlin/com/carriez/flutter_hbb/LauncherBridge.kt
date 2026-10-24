@@ -5,7 +5,7 @@ import android.content.Intent
 import android.util.Log
 
 /**
- * Ponte com o Launcher Quinyx (br.com.quinyx.launcher). Centraliza o contrato de broadcasts que
+ * Ponte com o Launcher Quinyx (br.com.quinyx.launcher e com.quinyx.launcher.display). Centraliza o contrato de broadcasts que
  * integram o QuinyxDesk ao launcher. Todos os valores aqui DEVEM bater com QuinyxDeskBridgeReceiver
  * no launcher.
  *
@@ -17,7 +17,9 @@ import android.util.Log
 object LauncherBridge {
     private const val TAG = "LauncherBridge"
 
-    private const val LAUNCHER_PACKAGE = "br.com.quinyx.launcher"
+    // Launcher da Mesinha e Launcher Display (lousas), com o mesmo contrato. Broadcast para pacote
+    // ausente não falha, então mandar para os dois dispensa saber qual está instalado.
+    private val LAUNCHER_PACKAGES = listOf("br.com.quinyx.launcher", "com.quinyx.launcher.display")
     private const val ACTION_REMOTE_ID = "br.com.quinyx.launcher.action.REMOTE_ID"
 
     // Segredo compartilhado: prova de origem do sinal. Provisionado no build via
@@ -33,14 +35,16 @@ object LauncherBridge {
     }
 
     private inline fun send(context: Context, action: String, extras: (Intent) -> Unit) {
-        runCatching {
-            val intent = Intent(action).apply {
-                setPackage(LAUNCHER_PACKAGE)
-                putExtra("token", TOKEN)
-                putExtra("sender_package", context.packageName)
-                extras(this)
-            }
-            context.sendBroadcast(intent)
-        }.onFailure { Log.w(TAG, "Falha ao enviar '$action' ao launcher", it) }
+        for (launcher in LAUNCHER_PACKAGES) {
+            runCatching {
+                val intent = Intent(action).apply {
+                    setPackage(launcher)
+                    putExtra("token", TOKEN)
+                    putExtra("sender_package", context.packageName)
+                    extras(this)
+                }
+                context.sendBroadcast(intent)
+            }.onFailure { Log.w(TAG, "Falha ao enviar '$action' ao $launcher", it) }
+        }
     }
 }
