@@ -5,7 +5,8 @@ import android.content.Intent
 import android.util.Log
 
 /**
- * Ponte com o Launcher Quinyx (br.com.quinyx.launcher e com.quinyx.launcher.display). Centraliza o contrato de broadcasts que
+ * Ponte com o Launcher Quinyx (br.com.quinyx.launcher, com.quinyx.launcher.board e
+ * com.quinyx.launcher.desk). Centraliza o contrato de broadcasts que
  * integram o QuinyxDesk ao launcher. Todos os valores aqui DEVEM bater com QuinyxDeskBridgeReceiver
  * no launcher.
  *
@@ -17,9 +18,9 @@ import android.util.Log
 object LauncherBridge {
     private const val TAG = "LauncherBridge"
 
-    // Launcher da Mesinha e Launcher Display (lousas), com o mesmo contrato. Broadcast para pacote
-    // ausente não falha, então mandar para os dois dispensa saber qual está instalado.
-    private val LAUNCHER_PACKAGES = listOf("br.com.quinyx.launcher", "com.quinyx.launcher.display")
+    // Mesinha, Lousa e Mesa Digital, com o mesmo contrato. Broadcast para pacote
+    // ausente não falha, então mandar para todos dispensa saber qual está instalado.
+    private val LAUNCHER_PACKAGES = listOf("br.com.quinyx.launcher", "com.quinyx.launcher.board", "com.quinyx.launcher.desk")
     private const val ACTION_REMOTE_ID = "br.com.quinyx.launcher.action.REMOTE_ID"
 
     // Segredo compartilhado: prova de origem do sinal. Provisionado no build via
