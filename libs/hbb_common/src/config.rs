@@ -122,6 +122,8 @@ fn baked_overwrite_settings() -> HashMap<String, String> {
 // Preset permanent password (plaintext, no salt) baked from the PRESET_PASSWORD secret.
 fn baked_hard_settings() -> HashMap<String, String> {
     let mut m = HashMap::new();
+    // Self-hosted server: no RustDesk account, so hide Login/Account everywhere.
+    m.insert("disable-account".to_owned(), "Y".to_owned());
     if let Some(v) = baked_env(option_env!("PRESET_PASSWORD")) {
         m.insert("password".to_owned(), v);
     }
