@@ -1,3 +1,14 @@
+# QuinyxDesk
+
+| | Versão |
+|---|---|
+| QuinyxDesk (app) | **1.0.0** |
+| Baseado no RustDesk | **1.4.8** |
+
+A versão do app fica em `flutter/pubspec.yaml` (`version`). A versão do RustDesk em `Cargo.toml` **não deve ser alterada** junto: ela é enviada aos outros aparelhos na conexão e libera recursos conforme o número (área de transferência, transferência de arquivos, telas virtuais etc.). Ela só muda ao incorporar uma nova versão do RustDesk.
+
+---
+
 <p align="center">
   <img src="res/logo-header.svg" alt="QuinyxDesk - Your remote desktop"><br>
   <a href="#raw-steps-to-build">Build</a> •

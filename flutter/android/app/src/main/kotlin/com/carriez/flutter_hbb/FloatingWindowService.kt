@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.PixelFormat
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -112,8 +113,8 @@ class FloatingWindowService : Service(), View.OnTouchListener {
                 e.printStackTrace()
             }
         }
-        // Ícone inteiro (vetor) encostado na borda, sem cortar ao meio
         floatingView.setImageDrawable(originalDrawable)
+        floatingView.scaleType = ImageView.ScaleType.MATRIX
         floatingView.setOnTouchListener(this)
         floatingView.alpha = viewTransparency * 1f
 
@@ -225,6 +226,7 @@ class FloatingWindowService : Service(), View.OnTouchListener {
                 dragging = true
                 layoutParams.x = event.rawX.toInt()
                 layoutParams.y = event.rawY.toInt()
+                showIcon(viewWidth, 0)
                 windowManager.updateViewLayout(view, layoutParams)
                 lastLayoutX = layoutParams.x
                 lastLayoutY = layoutParams.y
@@ -237,13 +239,31 @@ class FloatingWindowService : Service(), View.OnTouchListener {
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val wh = getScreenSize(windowManager)
         val w = wh.first
-        layoutParams.x = if (layoutParams.x < w / 2) 0 else w - viewWidth
+        // Encostado na borda fica 75% visível; o restante é cortado pela própria borda
+        val visibleWidth = viewWidth * 3 / 4
+        if (layoutParams.x < w / 2) {
+            layoutParams.x = 0
+            showIcon(visibleWidth, visibleWidth - viewWidth)
+        } else {
+            layoutParams.x = w - visibleWidth
+            showIcon(visibleWidth, 0)
+        }
         if (center) {
             layoutParams.y = (wh.second - viewHeight) / 2
         }
         windowManager.updateViewLayout(floatingView, layoutParams)
         lastLayoutX = layoutParams.x
         lastLayoutY = layoutParams.y
+    }
+
+    // Janela com `width` px de largura mostrando o ícone (sempre em viewWidth) deslocado em offsetX
+    private fun showIcon(width: Int, offsetX: Int) {
+        layoutParams.width = width
+        val scale = viewWidth.toFloat() / originalDrawable.intrinsicWidth
+        floatingView.imageMatrix = Matrix().apply {
+            setScale(scale, scale)
+            postTranslate(offsetX.toFloat(), 0f)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
