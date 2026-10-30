@@ -35,8 +35,6 @@ class FloatingWindowService : Service(), View.OnTouchListener {
     private lateinit var layoutParams: WindowManager.LayoutParams
     private lateinit var floatingView: ImageView
     private lateinit var originalDrawable: Drawable
-    private lateinit var leftHalfDrawable: Drawable
-    private lateinit var rightHalfDrawable: Drawable
 
     private var dragging = false
     private var lastDownX = 0f
@@ -114,37 +112,8 @@ class FloatingWindowService : Service(), View.OnTouchListener {
                 e.printStackTrace()
             }
         }
-        val originalBitmap = Bitmap.createBitmap(
-            originalDrawable.intrinsicWidth,
-            originalDrawable.intrinsicHeight,
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(originalBitmap)
-        originalDrawable.setBounds(
-            0,
-            0,
-            originalDrawable.intrinsicWidth,
-            originalDrawable.intrinsicHeight
-        )
-        originalDrawable.draw(canvas)
-        val leftHalfBitmap = Bitmap.createBitmap(
-            originalBitmap,
-            0,
-            0,
-            originalDrawable.intrinsicWidth / 2,
-            originalDrawable.intrinsicHeight
-        )
-        val rightHalfBitmap = Bitmap.createBitmap(
-            originalBitmap,
-            originalDrawable.intrinsicWidth / 2,
-            0,
-            originalDrawable.intrinsicWidth / 2,
-            originalDrawable.intrinsicHeight
-        )
-        leftHalfDrawable = BitmapDrawable(resources, leftHalfBitmap)
-        rightHalfDrawable = BitmapDrawable(resources, rightHalfBitmap)
-
-        floatingView.setImageDrawable(rightHalfDrawable)
+        // Ícone inteiro (vetor) encostado na borda, sem cortar ao meio
+        floatingView.setImageDrawable(originalDrawable)
         floatingView.setOnTouchListener(this)
         floatingView.alpha = viewTransparency * 1f
 
@@ -153,7 +122,7 @@ class FloatingWindowService : Service(), View.OnTouchListener {
             flags = flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         }
         layoutParams = WindowManager.LayoutParams(
-            viewWidth / 2,
+            viewWidth,
             viewHeight,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
             flags,
@@ -181,6 +150,9 @@ class FloatingWindowService : Service(), View.OnTouchListener {
         val wh = getScreenSize(windowManager)
         val w = wh.first
         val h = wh.second
+        // default size: 48dp, discreto e ainda fácil de tocar
+        viewWidth = (48 * resources.displayMetrics.density).toInt()
+        viewHeight = viewWidth
         // size
         FFI.getLocalOption("floating-window-size").let {
             if (it.isNotEmpty()) {
@@ -253,8 +225,6 @@ class FloatingWindowService : Service(), View.OnTouchListener {
                 dragging = true
                 layoutParams.x = event.rawX.toInt()
                 layoutParams.y = event.rawY.toInt()
-                layoutParams.width = viewWidth
-                floatingView.setImageDrawable(originalDrawable)
                 windowManager.updateViewLayout(view, layoutParams)
                 lastLayoutX = layoutParams.x
                 lastLayoutY = layoutParams.y
@@ -267,17 +237,10 @@ class FloatingWindowService : Service(), View.OnTouchListener {
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val wh = getScreenSize(windowManager)
         val w = wh.first
-        if (layoutParams.x < w / 2) {
-            layoutParams.x = 0
-            floatingView.setImageDrawable(rightHalfDrawable)
-        } else {
-            layoutParams.x = w - viewWidth / 2
-            floatingView.setImageDrawable(leftHalfDrawable)
-        }
+        layoutParams.x = if (layoutParams.x < w / 2) 0 else w - viewWidth
         if (center) {
             layoutParams.y = (wh.second - viewHeight) / 2
         }
-        layoutParams.width = viewWidth / 2
         windowManager.updateViewLayout(floatingView, layoutParams)
         lastLayoutX = layoutParams.x
         lastLayoutY = layoutParams.y
@@ -303,17 +266,18 @@ class FloatingWindowService : Service(), View.OnTouchListener {
      private fun showPopupMenu() {
          val popupMenu = PopupMenu(this, floatingView)
          val idShowRustDesk = 0
-         popupMenu.menu.add(0, idShowRustDesk, 0, translate("Show RustDesk"))
+         // Textos fixos em pt-BR, independentes do idioma do aparelho
+         popupMenu.menu.add(0, idShowRustDesk, 0, "Abrir ${getString(R.string.app_name)}")
          // For host side, clipboard sync
          val idSyncClipboard = 1
          val isServiceSyncEnabled = (MainActivity.rdClipboardManager?.isCaptureStarted ?: false) && FFI.isServiceClipboardEnabled()
          if (isServiceSyncEnabled) {
-             popupMenu.menu.add(0, idSyncClipboard, 0, translate("Update client clipboard"))
+             popupMenu.menu.add(0, idSyncClipboard, 0, "Enviar área de transferência")
          }
          val idStopService = 2
          val hideStopService = FFI.getBuildinOption("hide-stop-service") == "Y"
          if (!hideStopService) {
-             popupMenu.menu.add(0, idStopService, 0, translate("Stop service"))
+             popupMenu.menu.add(0, idStopService, 0, "Encerrar acesso remoto")
          }
          popupMenu.setOnMenuItemClickListener { menuItem ->
              when (menuItem.itemId) {
