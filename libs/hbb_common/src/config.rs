@@ -133,6 +133,10 @@ fn baked_hard_settings() -> HashMap<String, String> {
 // Lock the permanent password so it cannot be changed when one is baked in.
 fn baked_builtin_settings() -> HashMap<String, String> {
     let mut m = HashMap::new();
+    // Open-source hbbs has no HTTP API: without API_SERVER, skip heartbeat/sysinfo/audit calls.
+    if baked_env(option_env!("API_SERVER")).is_none() {
+        m.insert("register-device".to_owned(), "N".to_owned());
+    }
     if baked_env(option_env!("PRESET_PASSWORD")).is_some() {
         m.insert(
             "disable-change-permanent-password".to_owned(),

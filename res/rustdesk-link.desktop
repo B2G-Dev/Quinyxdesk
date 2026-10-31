@@ -1,11 +1,11 @@
 [Desktop Entry]
-Name=RustDesk
+Name=QuinyxDesk
 NoDisplay=true
 MimeType=x-scheme-handler/rustdesk;
-TryExec=rustdesk
-Exec=rustdesk %u
-Icon=rustdesk
+TryExec=quinyxdesk
+Exec=quinyxdesk %u
+Icon=quinyxdesk
 Terminal=false
 Type=Application
 StartupNotify=false
-StartupWMClass=rustdesk
+StartupWMClass=quinyxdesk

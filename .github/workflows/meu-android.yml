@@ -35,6 +35,16 @@ env:
   REMOTE_SESSION_TOKEN: "${{ secrets.REMOTE_SESSION_TOKEN }}"
 
 jobs:
+  # Sem estes secrets o config.rs cai no servidor público do RustDesk (mantendo a senha mestra).
+  check-secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validar secrets do servidor
+        run: |
+          for v in RENDEZVOUS_SERVER RS_PUB_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Secret $v não definido: o build usaria o servidor público do RustDesk"; exit 1; }
+          done
+
   generate-bridge:
     uses: ./.github/workflows/bridge.yml
 
@@ -54,7 +64,7 @@ jobs:
           fi
 
   build-android:
-    needs: [generate-bridge, set-matrix]
+    needs: [check-secrets, generate-bridge, set-matrix]
     name: build android apk (${{ matrix.arch }})
     runs-on: ubuntu-24.04
     strategy:

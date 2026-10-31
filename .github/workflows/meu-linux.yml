@@ -27,11 +27,21 @@ env:
   PRESET_PASSWORD: "${{ secrets.PRESET_PASSWORD }}"
 
 jobs:
+  # Sem estes secrets o config.rs cai no servidor público do RustDesk (mantendo a senha mestra).
+  check-secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validar secrets do servidor
+        run: |
+          for v in RENDEZVOUS_SERVER RS_PUB_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Secret $v não definido: o build usaria o servidor público do RustDesk"; exit 1; }
+          done
+
   generate-bridge:
     uses: ./.github/workflows/bridge.yml
 
   build-linux:
-    needs: [generate-bridge]
+    needs: [check-secrets, generate-bridge]
     name: build linux deb (ubuntu 26.04 / amd64)
     runs-on: ubuntu-24.04
     # Compila dentro do próprio Ubuntu 26.04: glibc/GTK do .deb batem com o alvo.
@@ -178,7 +188,7 @@ jobs:
           df -h
           python3 ./build.py --flutter --hwcodec --unix-file-copy-paste
           mkdir -p ./output
-          mv rustdesk-*.deb ./output/quinyxdesk-${{ env.VERSION }}-ubuntu26.04-amd64.deb
+          mv quinyxdesk-*.deb ./output/quinyxdesk-${{ env.VERSION }}-ubuntu26.04-amd64.deb
           ls -l ./output
 
       - name: Upload deb

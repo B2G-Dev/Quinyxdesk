@@ -482,7 +482,9 @@ class _GeneralState extends State<_General> {
   }
 
   Widget other() {
-    final showAutoUpdate = isWindows && bind.mainIsInstalled();
+    // The updater pulls the official RustDesk build, which would replace this client.
+    final showAutoUpdate =
+        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
     final children = <Widget>[
       if (!isWeb && !bind.isIncomingOnly())
         _OptionCheckBox(context, 'Confirm before closing multiple tabs',

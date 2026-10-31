@@ -35,11 +35,21 @@ env:
   PRESET_PASSWORD: "${{ secrets.PRESET_PASSWORD }}"
 
 jobs:
+  # Sem estes secrets o config.rs cai no servidor público do RustDesk (mantendo a senha mestra).
+  check-secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validar secrets do servidor
+        run: |
+          for v in RENDEZVOUS_SERVER RS_PUB_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Secret $v não definido: o build usaria o servidor público do RustDesk"; exit 1; }
+          done
+
   generate-bridge:
     uses: ./.github/workflows/bridge.yml
 
   build-windows:
-    needs: [generate-bridge]
+    needs: [check-secrets, generate-bridge]
     name: build windows (${{ github.event.inputs.arch }})
     runs-on: windows-2022
     strategy:
@@ -168,7 +178,7 @@ jobs:
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/QuinyxDesk.exe
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
