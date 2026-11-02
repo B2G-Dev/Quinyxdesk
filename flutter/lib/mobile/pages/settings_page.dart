@@ -108,10 +108,13 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
   var _isUsingPublicServer = false;
   var _allowAskForNoteAtEndOfConnection = false;
   var _preventSleepWhileConnected = true;
+  var _halfScale = false;
 
   _SettingsState() {
     _enableAbr = option2bool(
         kOptionEnableAbr, bind.mainGetOptionSync(key: kOptionEnableAbr));
+    _halfScale =
+        mainGetBoolOptionSync(kOptionEnableAndroidSoftwareEncodingHalfScale);
     _denyLANDiscovery = !option2bool(kOptionEnableLanDiscovery,
         bind.mainGetOptionSync(key: kOptionEnableLanDiscovery));
     _onlyWhiteList = whitelistNotEmpty();
@@ -467,6 +470,26 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 });
               },
       ),
+      // Textos fixos em pt-BR, como os demais textos próprios do QuinyxDesk.
+      if (isAndroid)
+        SettingsTile.switchTile(
+          title: Text('Reduzir resolução da captura'),
+          description: Text(
+              'Usa metade da resolução quando não há codificador de vídeo por hardware. '
+              'Alivia a CPU, mas a imagem fica menos nítida. Vale na próxima conexão.'),
+          initialValue: _halfScale,
+          onToggle: isOptionFixed(kOptionEnableAndroidSoftwareEncodingHalfScale)
+              ? null
+              : (v) async {
+                  await mainSetBoolOption(
+                      kOptionEnableAndroidSoftwareEncodingHalfScale, v);
+                  final newValue = await mainGetBoolOption(
+                      kOptionEnableAndroidSoftwareEncodingHalfScale);
+                  setState(() {
+                    _halfScale = newValue;
+                  });
+                },
+        ),
       SettingsTile.switchTile(
         title: Text(translate('Enable recording session')),
         initialValue: _enableRecordSession,

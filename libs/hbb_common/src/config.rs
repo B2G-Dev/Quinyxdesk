@@ -72,7 +72,7 @@ lazy_static::lazy_static! {
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
     pub static ref NEW_STORED_PEER_CONFIG: Mutex<HashSet<String>> = Default::default();
-    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(baked_default_settings());
     // Locked settings baked at compile time from CI secrets. Options present here
     // take priority on read and `is_option_can_save` refuses to overwrite them,
     // so the end user cannot change the server, key or auth method.
@@ -144,6 +144,19 @@ fn baked_builtin_settings() -> HashMap<String, String> {
         m.insert(
             "disable-change-permanent-password".to_owned(),
             "Y".to_owned(),
+        );
+    }
+    m
+}
+
+// Android hosts without a hardware encoder used to capture at half resolution, which blurs
+// text on 1080p boards. Default to full resolution; the setting can still turn it back on.
+fn baked_default_settings() -> HashMap<String, String> {
+    let mut m = HashMap::new();
+    if cfg!(target_os = "android") {
+        m.insert(
+            "enable-android-software-encoding-half-scale".to_owned(),
+            "N".to_owned(),
         );
     }
     m
