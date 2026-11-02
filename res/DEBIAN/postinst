@@ -10,7 +10,7 @@ if [ "$1" = configure ]; then
 	if [ "systemd" == "$INITSYS" ]; then
 
 		if [ -e /etc/systemd/system/quinyxdesk.service ]; then
-			rm /etc/systemd/system/quinyxdesk.service /usr/lib/systemd/system/quinyxdesk.service /usr/lib/systemd/user/quinyxdesk.service >/dev/null  2>&1
+			rm -f /etc/systemd/system/quinyxdesk.service /usr/lib/systemd/system/quinyxdesk.service /usr/lib/systemd/user/quinyxdesk.service >/dev/null  2>&1
 		fi
 		mkdir -p /usr/lib/systemd/system/
 		cp /usr/share/quinyxdesk/files/systemd/quinyxdesk.service /usr/lib/systemd/system/quinyxdesk.service

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_hbb/common/widgets/api_server_warning.dart';
 import 'package:flutter_hbb/common/widgets/setting_widgets.dart';
 import 'package:flutter_hbb/common/widgets/toolbar.dart';
 import 'package:get/get.dart';
@@ -69,6 +70,8 @@ void showServerSettingsWithValue(
     ServerConfig serverConfig,
     OverlayDialogManager dialogManager,
     void Function(VoidCallback)? upSetState) async {
+  const labelWidth = 120.0;
+  const labelSpacing = 8.0;
   var isInProgress = false;
   // Never pre-fill the current values: the dialog must not reveal the configured
   // server/key to anyone who opens it, even when a configuration already exists.
@@ -115,10 +118,10 @@ void showServerSettingsWithValue(
         return Row(
           children: [
             SizedBox(
-              width: 120,
+              width: labelWidth,
               child: Text(label),
             ),
-            SizedBox(width: 8),
+            SizedBox(width: labelSpacing),
             Expanded(
               child: serverSettingsTextFormField(
                 label: label,
@@ -177,6 +180,17 @@ void showServerSettingsWithValue(
                       }
                       return null;
                     },
+                  ),
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(
+                      start: isDesktop || isWeb ? labelWidth + labelSpacing : 0,
+                    ),
+                    child: ApiServerWarning(
+                      controller: apiCtrl,
+                      idController: idCtrl,
+                      message: translate('api_server_connection_tip'),
+                      emptyMessage: translate('api_server_empty_tip'),
+                    ),
                   ),
                   SizedBox(height: 8),
                   buildField('Key', keyCtrl, keyServerMsg.value),
