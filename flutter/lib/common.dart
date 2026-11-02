@@ -3704,7 +3704,7 @@ Widget loadPowered(BuildContext context) {
     cursor: SystemMouseCursors.click,
     child: GestureDetector(
       onTap: () {
-        launchUrl(Uri.parse('https://rustdesk.com'));
+        launchUrl(Uri.parse('https://quinyxcompany.com'));
       },
       child: Opacity(
           opacity: 0.5,
