@@ -238,6 +238,14 @@ class MainService : Service() {
             serviceHandler = Handler(looper)
         }
         updateScreenInfo(resources.configuration.orientation)
+        // On boot the service starts without MainActivity, so report the hardware encoders here too.
+        thread {
+            try {
+                setCodecInfo(this)
+            } catch (e: Exception) {
+                Log.e(logTag, "Failed to setCodecInfo: ${e.message}", e)
+            }
+        }
         initNotification()
 
         // keep the config dir same with flutter
