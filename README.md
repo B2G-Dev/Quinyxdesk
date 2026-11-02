@@ -27,8 +27,8 @@ Acesso remoto da Quinyx Company para lousas, mesas digitais e computadores. É u
 
 | Plataforma | Workflow | Artefato |
 |---|---|---|
-| Android | **Meu Build Android** ([meu-android.yml](.github/workflows/meu-android.yml)) | `rustdesk-1.0.0-<arch>.apk` (arm64-v8a, armeabi-v7a, x86_64) |
-| Windows | **Meu Build Windows** ([meu-windows.yml](.github/workflows/meu-windows.yml)) | `.exe` portátil e/ou `.msi` |
+| Android | **Meu Build Android** ([meu-android.yml](.github/workflows/meu-android.yml)) | `quinyxdesk-1.0.0-<arch>.apk` (arm64-v8a, armeabi-v7a, x86_64) |
+| Windows | **Meu Build Windows** ([meu-windows.yml](.github/workflows/meu-windows.yml)) | `quinyxdesk-1.0.0-x86_64.exe` (portátil) e/ou `.msi` |
 | Linux | **Meu Build Linux** ([meu-linux.yml](.github/workflows/meu-linux.yml)) | `quinyxdesk-1.0.0-ubuntu26.04-amd64.deb` |
 
 Os builds de produção saem **somente** por esses workflows, executados manualmente em *Actions › Run workflow*. Os demais workflows (`flutter-*.yml`, `ci.yml` etc.) vieram do RustDesk e não são usados.

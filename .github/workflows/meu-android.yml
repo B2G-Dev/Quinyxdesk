@@ -244,11 +244,11 @@ jobs:
           flutter build apk --release --target-platform ${{ steps.triple.outputs.platform }} --split-per-abi
           popd
           mv flutter/build/app/outputs/flutter-apk/app-${{ matrix.arch }}-release.apk \
-             rustdesk-${{ env.VERSION }}-${{ matrix.arch }}.apk
+             quinyxdesk-${{ env.VERSION }}-${{ matrix.arch }}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: rustdesk-${{ env.VERSION }}-${{ matrix.arch }}
-          path: rustdesk-${{ env.VERSION }}-${{ matrix.arch }}.apk
+          name: quinyxdesk-${{ env.VERSION }}-${{ matrix.arch }}
+          path: quinyxdesk-${{ env.VERSION }}-${{ matrix.arch }}.apk
           if-no-files-found: error
