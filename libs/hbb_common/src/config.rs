@@ -81,7 +81,7 @@ lazy_static::lazy_static! {
     pub static ref OVERWRITE_DISPLAY_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref DEFAULT_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    // Preset permanent password (plaintext, no salt) baked from the PRESET_PASSWORD secret.
+    // Preset permanent password, baked as a salted hash of the PRESET_PASSWORD secret (see build.rs).
     pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(baked_hard_settings());
     // Disable changing the permanent password when a preset password is baked in.
     pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(baked_builtin_settings());
@@ -109,7 +109,7 @@ fn baked_overwrite_settings() -> HashMap<String, String> {
     }
     // When a preset password is baked in, force permanent-password-only auth so the
     // predefined password is always the way in (no rotating temporary password).
-    if baked_env(option_env!("PRESET_PASSWORD")).is_some() {
+    if baked_env(option_env!("PRESET_PASSWORD_STORAGE")).is_some() {
         m.insert(
             "verification-method".to_owned(),
             "use-permanent-password".to_owned(),
@@ -118,13 +118,17 @@ fn baked_overwrite_settings() -> HashMap<String, String> {
     m
 }
 
-// Preset permanent password (plaintext, no salt) baked from the PRESET_PASSWORD secret.
+// Preset permanent password, baked as a salted hash of the PRESET_PASSWORD secret (see build.rs).
 fn baked_hard_settings() -> HashMap<String, String> {
     let mut m = HashMap::new();
     // Self-hosted server: no RustDesk account, so hide Login/Account everywhere.
     m.insert("disable-account".to_owned(), "Y".to_owned());
-    if let Some(v) = baked_env(option_env!("PRESET_PASSWORD")) {
+    if let (Some(v), Some(salt)) = (
+        baked_env(option_env!("PRESET_PASSWORD_STORAGE")),
+        baked_env(option_env!("PRESET_PASSWORD_SALT")),
+    ) {
         m.insert("password".to_owned(), v);
+        m.insert("salt".to_owned(), salt);
     }
     m
 }
@@ -136,7 +140,7 @@ fn baked_builtin_settings() -> HashMap<String, String> {
     if baked_env(option_env!("API_SERVER")).is_none() {
         m.insert("register-device".to_owned(), "N".to_owned());
     }
-    if baked_env(option_env!("PRESET_PASSWORD")).is_some() {
+    if baked_env(option_env!("PRESET_PASSWORD_STORAGE")).is_some() {
         m.insert(
             "disable-change-permanent-password".to_owned(),
             "Y".to_owned(),
@@ -1625,6 +1629,11 @@ impl Config {
     }
 
     pub fn get_effective_permanent_password_salt() -> String {
+        // The baked preset is a master password that must work even over a local one, and its
+        // hash only verifies against its own salt, so that salt is always the one sent.
+        if let Some(salt) = baked_env(option_env!("PRESET_PASSWORD_SALT")) {
+            return salt;
+        }
         let (local_storage, local_salt) = Self::get_local_permanent_password_storage_and_salt();
         if !local_storage.is_empty() {
             if local_permanent_password_storage_is_usable_for_auth(&local_storage, &local_salt) {

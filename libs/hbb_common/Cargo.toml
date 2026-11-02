@@ -81,6 +81,8 @@ machine-uid = { git = "https://github.com/rustdesk-org/machine-uid" }
 
 [build-dependencies]
 protobuf-codegen = { version = "3.7" }
+base64 = "0.22"
+sha2 = "0.10"
 
 [dev-dependencies]
 clap = "4.5.51"
