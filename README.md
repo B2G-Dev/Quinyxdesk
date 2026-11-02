@@ -1,193 +1,110 @@
+<p align="center">
+  <img src="res/logo-header.svg" alt="QuinyxDesk">
+</p>
+
 # QuinyxDesk
+
+Acesso remoto da Quinyx Company para lousas, mesas digitais e computadores. É um fork do [RustDesk](https://github.com/rustdesk/rustdesk) que se conecta somente ao servidor próprio da Quinyx.
 
 | | Versão |
 |---|---|
 | QuinyxDesk (app) | **1.0.0** |
 | Baseado no RustDesk | **1.4.8** |
 
-A versão do app fica em `flutter/pubspec.yaml` (`version`). A versão do RustDesk em `Cargo.toml` **não deve ser alterada** junto: ela é enviada aos outros aparelhos na conexão e libera recursos conforme o número (área de transferência, transferência de arquivos, telas virtuais etc.). Ela só muda ao incorporar uma nova versão do RustDesk.
+> [!IMPORTANT]
+> A versão do app fica em `flutter/pubspec.yaml` (`version`). A versão em `Cargo.toml` (1.4.8) **não deve ser alterada** junto: ela é enviada aos outros aparelhos na conexão e libera recursos conforme o número (área de transferência, transferência de arquivos, telas virtuais etc.). Ela só muda ao incorporar uma nova versão do RustDesk.
 
----
+## Diferenças em relação ao RustDesk
 
-<p align="center">
-  <img src="res/logo-header.svg" alt="QuinyxDesk - Your remote desktop"><br>
-  <a href="#raw-steps-to-build">Build</a> •
-  <a href="#how-to-build-with-docker">Docker</a> •
-  <a href="#file-structure">Structure</a> •
-  <a href="#snapshot">Snapshot</a><br>
-  [<a href="docs/README-UA.md">Українська</a>] | [<a href="docs/README-CS.md">česky</a>] | [<a href="docs/README-ZH.md">中文</a>] | [<a href="docs/README-HU.md">Magyar</a>] | [<a href="docs/README-ES.md">Español</a>] | [<a href="docs/README-FA.md">فارسی</a>] | [<a href="docs/README-FR.md">Français</a>] | [<a href="docs/README-DE.md">Deutsch</a>] | [<a href="docs/README-PL.md">Polski</a>] | [<a href="docs/README-ID.md">Indonesian</a>] | [<a href="docs/README-FI.md">Suomi</a>] | [<a href="docs/README-ML.md">മലയാളം</a>] | [<a href="docs/README-JP.md">日本語</a>] | [<a href="docs/README-NL.md">Nederlands</a>] | [<a href="docs/README-IT.md">Italiano</a>] | [<a href="docs/README-RU.md">Русский</a>] | [<a href="docs/README-PTBR.md">Português (Brasil)</a>] | [<a href="docs/README-EO.md">Esperanto</a>] | [<a href="docs/README-KR.md">한국어</a>] | [<a href="docs/README-AR.md">العربي</a>] | [<a href="docs/README-VN.md">Tiếng Việt</a>] | [<a href="docs/README-DA.md">Dansk</a>] | [<a href="docs/README-GR.md">Ελληνικά</a>] | [<a href="docs/README-TR.md">Türkçe</a>] | [<a href="docs/README-NO.md">Norsk</a>] | [<a href="docs/README-RO.md">Română</a>]<br>
-  <b>We need your help to translate this README, <a href="https://github.com/rustdesk/rustdesk/tree/master/src/lang">RustDesk UI</a> and <a href="https://github.com/rustdesk/doc.rustdesk.com">RustDesk Doc</a> to your native language</b>
-</p>
+- **Servidor fixo.** O servidor, a chave pública e a senha mestra são gravados no app durante o build (`option_env!` em [config.rs](libs/hbb_common/src/config.rs)). O usuário não consegue trocar o servidor nem a senha.
+- **Sem conta nem login.** A opção de Login/Conta está oculta em todas as plataformas, porque o servidor é o hbbs/hbbr open source, que não tem API.
+- **Sem atualização automática.** O atualizador do RustDesk baixaria a versão oficial por cima do QuinyxDesk, por isso está desligado. Atualizações saem pelos workflows deste repositório.
+- **Marca Quinyx.** Nome, ícones e textos foram trocados, incluindo o crédito "Alterado por Quinyx Company" e os links para [quinyxcompany.com](https://quinyxcompany.com).
+- **Integração com os launchers (Android).** O app envia o ID de acesso aos launchers da Quinyx (veja [Ponte com os launchers](#ponte-com-os-launchers-android)).
+- **Pacotes com nome próprio.** O pacote Android é `com.quinyx.rustdesk`. No Linux, o binário, o serviço e o `.deb` se chamam `quinyxdesk`.
 
-> [!Caution]
-> **Misuse Disclaimer:** <br>
-> The developers of RustDesk do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized access, control or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+## Plataformas
 
+| Plataforma | Workflow | Artefato |
+|---|---|---|
+| Android | **Meu Build Android** ([meu-android.yml](.github/workflows/meu-android.yml)) | `rustdesk-1.0.0-<arch>.apk` (arm64-v8a, armeabi-v7a, x86_64) |
+| Windows | **Meu Build Windows** ([meu-windows.yml](.github/workflows/meu-windows.yml)) | `.exe` portátil e/ou `.msi` |
+| Linux | **Meu Build Linux** ([meu-linux.yml](.github/workflows/meu-linux.yml)) | `quinyxdesk-1.0.0-ubuntu26.04-amd64.deb` |
 
-Chat with us: [Discord](https://discord.gg/nDceKgxnkV) | [Twitter](https://twitter.com/rustdesk) | [Reddit](https://www.reddit.com/r/rustdesk) | [YouTube](https://www.youtube.com/@rustdesk)
+Os builds de produção saem **somente** por esses workflows, executados manualmente em *Actions › Run workflow*. Os demais workflows (`flutter-*.yml`, `ci.yml` etc.) vieram do RustDesk e não são usados.
 
-[![RustDesk Server Pro](https://img.shields.io/badge/RustDesk%20Server%20Pro-Advanced%20Features-blue)](https://rustdesk.com/pricing.html)
+## Secrets do build
 
-Yet another remote desktop solution, written in Rust. Works out of the box with no configuration required. You have full control of your data, with no concerns about security. You can use our rendezvous/relay server, [set up your own](https://rustdesk.com/server), or [write your own rendezvous/relay server](https://github.com/rustdesk/rustdesk-server-demo).
+Configurados em *Settings › Secrets and variables › Actions* do repositório. Para builds locais, os mesmos valores ficam em `.env`, que está no `.gitignore` e **nunca deve ser commitado**.
 
-![image](https://user-images.githubusercontent.com/71636191/171661982-430285f0-2e12-4b1d-9957-4a58e375304d.png)
+| Secret | Uso | Obrigatório |
+|---|---|---|
+| `RENDEZVOUS_SERVER` | Endereço do servidor hbbs | Sim |
+| `RS_PUB_KEY` | Chave pública do servidor | Sim |
+| `PRESET_PASSWORD` | Senha mestra aceita por todos os aparelhos | Sim |
+| `API_SERVER` | API HTTP do RustDesk Server Pro. **Deixe sem definir**: o servidor open source não tem API, e sem ela o app desliga heartbeat, sysinfo e auditoria | Não |
+| `REMOTE_SESSION_TOKEN` | Token da ponte com os launchers. Deve ser igual ao usado no build dos launchers | Android (release) |
+| `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS` | Assinatura do APK | Android |
+| `ADI_REGISTRATION_SNIPPET` | Arquivo de verificação de desenvolvedor do Android | Android |
 
-RustDesk welcomes contribution from everyone. See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for help getting started.
+> [!WARNING]
+> Sem `RENDEZVOUS_SERVER` ou `RS_PUB_KEY`, o código cairia no servidor público do RustDesk, mantendo a senha mestra. Por isso todo workflow começa pelo job `check-secrets`, que interrompe o build se algum deles faltar.
 
-[**FAQ**](https://github.com/rustdesk/rustdesk/wiki/FAQ)
+## Ponte com os launchers (Android)
 
-[**BINARY DOWNLOAD**](https://github.com/rustdesk/rustdesk/releases)
+[LauncherBridge.kt](flutter/android/app/src/main/kotlin/com/carriez/flutter_hbb/LauncherBridge.kt) envia o ID de acesso por broadcast para:
 
-[**NIGHTLY BUILD**](https://github.com/rustdesk/rustdesk/releases/tag/nightly)
+| Pacote | Launcher |
+|---|---|
+| `br.com.quinyx.launcher` | Mesinha |
+| `com.quinyx.launcher.board` | Lousa |
+| `com.quinyx.launcher.desk` | Mesa Digital |
 
-[<img src="https://f-droid.org/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/en/packages/com.carriez.flutter_hbb)
-[<img src="https://flathub.org/api/badge?svg&locale=en"
-    alt="Get it on Flathub"
-    height="80">](https://flathub.org/apps/com.rustdesk.RustDesk)
+- Action: `br.com.quinyx.launcher.action.REMOTE_ID`
+- Extras: `id`, `token` (o `REMOTE_SESSION_TOKEN`) e `sender_package`
 
-## Dependencies
+O contrato precisa bater com o `QuinyxDeskBridgeReceiver` dos launchers. Um build de release sem `REMOTE_SESSION_TOKEN` é abortado pelo Gradle, para que o APK nunca saia com o token público de desenvolvimento.
 
-Desktop versions use Flutter or Sciter (deprecated) for GUI, this tutorial is for Sciter only, since it is easier and more friendly to start. Check out our [CI](https://github.com/rustdesk/rustdesk/blob/master/.github/workflows/flutter-build.yml) for building Flutter version.
+## Build local
 
-Please download Sciter dynamic library yourself.
+O caminho recomendado é o CI. Localmente, as versões que precisam bater com ele são:
 
-[Windows](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sciter.dll) |
-[Linux](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so) |
-[macOS](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.osx/libsciter.dylib)
+| Ferramenta | Versão |
+|---|---|
+| Rust | 1.75 |
+| Flutter | 3.24.5, com o patch `.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff` |
+| `flutter_rust_bridge_codegen` | 1.80.1 |
+| JDK (Android) | 17 |
+| NDK (Android) | r28c |
 
-## Raw Steps to build
+Passo a passo de alto nível:
 
-- Prepare your Rust development env and C++ build env
+1. Gere o binding Flutter ↔ Rust (`flutter/lib/generated_bridge.dart`) como em [bridge.yml](.github/workflows/bridge.yml).
+2. Compile a biblioteca Rust com os secrets do `.env` no ambiente (Android: scripts `flutter/ndk_*.sh`, via `cargo ndk`; desktop: `python3 build.py --flutter --hwcodec`, com as flags de cada workflow).
+3. Compile o app Flutter (Android: `flutter build apk`; Windows/Linux: o `build.py` já faz isso).
 
-- Install [vcpkg](https://github.com/microsoft/vcpkg), and set `VCPKG_ROOT` env variable correctly
+As dependências de sistema (vcpkg, libvpx, libyuv, opus, aom e pacotes do Linux) são as mesmas do RustDesk e estão listadas nos workflows e na [documentação de build do RustDesk](https://rustdesk.com/docs/en/dev/build/).
 
-  - Windows: vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-  - Linux/macOS: vcpkg install libvpx libyuv opus aom
+## Estrutura
 
-- run `cargo run`
+| Caminho | Conteúdo |
+|---|---|
+| [src/](src/) | App em Rust: conexão, servidor de captura e entrada, plataformas |
+| [src/lang/](src/lang/) | Traduções (`ptbr.rs` é o idioma principal) |
+| [libs/hbb_common/](libs/hbb_common/) | Configuração (servidor e senha embutidos), protocolo e utilitários |
+| [libs/scrap/](libs/scrap/) | Captura de tela e codecs de vídeo |
+| [libs/enigo/](libs/enigo/) | Controle de teclado e mouse |
+| [flutter/lib/](flutter/lib/) | Interface (`desktop/`, `mobile/`, `common/`, `models/`) |
+| [flutter/android/](flutter/android/) | Código nativo Android: serviço de captura, ícone flutuante, ponte com os launchers |
+| [res/](res/) | Ícones, serviço systemd, `.desktop` e scripts do pacote Debian |
+| [build.py](build.py) | Build e empacotamento do desktop |
+| [docs/](docs/) | Revisões de código e notas das versões Quinyx |
 
-## [Build](https://rustdesk.com/docs/en/dev/build/)
+Regras de código para quem edita o projeto (inclusive agentes de IA): [AGENTS.md](AGENTS.md).
 
-## How to Build on Linux
+## Licença
 
-### Ubuntu 18 (Debian 10)
+Este projeto é derivado do RustDesk e distribuído sob a [GNU AGPL v3](LICENCE). Quem distribuir o app ou oferecê-lo como serviço deve disponibilizar o código-fonte correspondente.
 
-```sh
-sudo apt install -y zip g++ gcc git curl wget nasm yasm libgtk-3-dev clang libxcb-randr0-dev libxdo-dev \
-        libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev libpulse-dev cmake make \
-        libclang-dev ninja-build libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libpam0g-dev
-```
-
-### openSUSE Tumbleweed
-
-```sh
-sudo zypper install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libXfixes-devel cmake alsa-lib-devel gstreamer-devel gstreamer-plugins-base-devel xdotool-devel pam-devel
-```
-
-### Fedora 28 (CentOS 8)
-
-```sh
-sudo yum -y install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libxdo-devel libXfixes-devel pulseaudio-libs-devel cmake alsa-lib-devel gstreamer1-devel gstreamer1-plugins-base-devel pam-devel
-```
-
-### Arch (Manjaro)
-
-```sh
-sudo pacman -Syu --needed unzip git cmake gcc curl wget yasm nasm zip make pkg-config clang gtk3 xdotool libxcb libxfixes alsa-lib pipewire
-```
-
-### Install vcpkg
-
-```sh
-git clone https://github.com/microsoft/vcpkg
-cd vcpkg
-git checkout 2023.04.15
-cd ..
-vcpkg/bootstrap-vcpkg.sh
-export VCPKG_ROOT=$HOME/vcpkg
-vcpkg/vcpkg install libvpx libyuv opus aom
-```
-
-### Fix libvpx (For Fedora)
-
-```sh
-cd vcpkg/buildtrees/libvpx/src
-cd *
-./configure
-sed -i 's/CFLAGS+=-I/CFLAGS+=-fPIC -I/g' Makefile
-sed -i 's/CXXFLAGS+=-I/CXXFLAGS+=-fPIC -I/g' Makefile
-make
-cp libvpx.a $HOME/vcpkg/installed/x64-linux/lib/
-cd
-```
-
-### Build
-
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-git clone --recurse-submodules https://github.com/rustdesk/rustdesk
-cd rustdesk
-mkdir -p target/debug
-wget https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so
-mv libsciter-gtk.so target/debug
-VCPKG_ROOT=$HOME/vcpkg cargo run
-```
-
-## How to build with Docker
-
-Begin by cloning the repository and building the Docker container:
-
-```sh
-git clone https://github.com/rustdesk/rustdesk
-cd rustdesk
-git submodule update --init --recursive
-docker build -t "rustdesk-builder" .
-```
-
-Then, each time you need to build the application, run the following command:
-
-```sh
-docker run --rm -it -v $PWD:/home/user/rustdesk -v rustdesk-git-cache:/home/user/.cargo/git -v rustdesk-registry-cache:/home/user/.cargo/registry -e PUID="$(id -u)" -e PGID="$(id -g)" rustdesk-builder
-```
-
-Note that the first build may take longer before dependencies are cached, subsequent builds will be faster. Additionally, if you need to specify different arguments to the build command, you may do so at the end of the command in the `<OPTIONAL-ARGS>` position. For instance, if you wanted to build an optimized release version, you would run the command above followed by `--release`. The resulting executable will be available in the target folder on your system, and can be run with:
-
-```sh
-target/debug/rustdesk
-```
-
-Or, if you're running a release executable:
-
-```sh
-target/release/rustdesk
-```
-
-Please ensure that you run these commands from the root of the RustDesk repository, or the application may not find the required resources. Also note that other cargo subcommands such as `install` or `run` are not currently supported via this method as they would install or run the program inside the container instead of the host.
-
-## File Structure
-
-- **[libs/hbb_common](https://github.com/rustdesk/rustdesk/tree/master/libs/hbb_common)**: video codec, config, tcp/udp wrapper, protobuf, fs functions for file transfer, and some other utility functions
-- **[libs/scrap](https://github.com/rustdesk/rustdesk/tree/master/libs/scrap)**: screen capture
-- **[libs/enigo](https://github.com/rustdesk/rustdesk/tree/master/libs/enigo)**: platform specific keyboard/mouse control
-- **[libs/clipboard](https://github.com/rustdesk/rustdesk/tree/master/libs/clipboard)**: file copy and paste implementation for Windows, Linux, macOS.
-- **[src/ui](https://github.com/rustdesk/rustdesk/tree/master/src/ui)**: obsolete Sciter UI (deprecated)
-- **[src/server](https://github.com/rustdesk/rustdesk/tree/master/src/server)**: audio/clipboard/input/video services, and network connections
-- **[src/client.rs](https://github.com/rustdesk/rustdesk/tree/master/src/client.rs)**: start a peer connection
-- **[src/rendezvous_mediator.rs](https://github.com/rustdesk/rustdesk/tree/master/src/rendezvous_mediator.rs)**: Communicate with [rustdesk-server](https://github.com/rustdesk/rustdesk-server), wait for remote direct (TCP hole punching) or relayed connection
-- **[src/platform](https://github.com/rustdesk/rustdesk/tree/master/src/platform)**: platform specific code
-- **[flutter](https://github.com/rustdesk/rustdesk/tree/master/flutter)**: Flutter code for desktop and mobile
-- **[flutter/web/js](https://github.com/rustdesk/rustdesk/tree/master/flutter/web/v1/js)**: JavaScript for Flutter web client
-
-## Screenshots
-
-![Connection Manager](https://github.com/rustdesk/rustdesk/assets/28412477/db82d4e7-c4bc-4823-8e6f-6af7eadf7651)
-
-![Connected to a Windows PC](https://github.com/rustdesk/rustdesk/assets/28412477/9baa91e9-3362-4d06-aa1a-7518edcbd7ea)
-
-![File Transfer](https://github.com/rustdesk/rustdesk/assets/28412477/39511ad3-aa9a-4f8c-8947-1cce286a46ad)
-
-![TCP Tunneling](https://github.com/rustdesk/rustdesk/assets/28412477/78e8708f-e87e-4570-8373-1360033ea6c5)
-
+> [!CAUTION]
+> Use o QuinyxDesk somente para acessar aparelhos com autorização de quem os utiliza. Acesso não autorizado ou invasão de privacidade não são permitidos.
