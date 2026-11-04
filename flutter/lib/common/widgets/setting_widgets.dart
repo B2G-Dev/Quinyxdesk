@@ -253,6 +253,43 @@ List<(String, String)> otherDefaultSettings() {
   return v;
 }
 
+// Legendas das opções de otherDefaultSettings(), por chave (pt-BR fixo, texto próprio do QuinyxDesk).
+const otherDefaultDescriptions = {
+  kOptionViewOnly: 'Abre os acessos só para ver, sem controlar teclado e mouse.',
+  kKeyShowMonitorsToolbar:
+      'Mostra os monitores do dispositivo remoto na barra de ferramentas.',
+  kOptionCollapseToolbar: 'Abre os acessos com a barra de ferramentas recolhida.',
+  kOptionShowRemoteCursor: 'Desenha o cursor do dispositivo remoto na imagem.',
+  kOptionFollowRemoteCursor:
+      'A visualização acompanha o cursor do dispositivo remoto.',
+  kOptionFollowRemoteWindow:
+      'A visualização acompanha a janela em foco no dispositivo remoto.',
+  kOptionZoomCursor: 'O cursor acompanha o zoom da imagem remota.',
+  kOptionShowQualityMonitor:
+      'Mostra taxa de quadros, atraso e velocidade da conexão sobre a imagem.',
+  kOptionDisableAudio: 'Não reproduz o som do dispositivo remoto.',
+  kOptionEnableFileCopyPaste:
+      'Permite copiar e colar arquivos entre os computadores.',
+  kOptionDisableClipboard:
+      'Não sincroniza a área de transferência entre os dispositivos.',
+  kOptionLockAfterSessionEnd:
+      'Bloqueia o dispositivo remoto quando o acesso termina.',
+  kOptionPrivacyMode:
+      'Apaga a tela do dispositivo remoto para quem está na frente dele, quando suportado.',
+  kOptionI444:
+      'Cores mais fiéis (bom para texto e imagens), com mais uso de rede e processamento.',
+  kKeyReverseMouseWheel: 'Inverte o sentido da rolagem.',
+  kOptionSwapLeftRightMouse: 'Troca os botões esquerdo e direito do mouse.',
+  kKeyShowDisplaysAsIndividualWindows:
+      'Abre cada monitor remoto em uma janela própria.',
+  kKeyUseAllMyDisplaysForTheRemoteSession:
+      'Espalha os monitores remotos por todos os monitores deste computador.',
+  kOptionTerminalPersistent:
+      'Mantém as sessões de terminal abertas no dispositivo remoto ao desconectar.',
+  kOptionAllowTerminalClipboardWrite:
+      'Permite que programas do terminal remoto copiem para a área de transferência.',
+};
+
 String getOtherDefaultSettingOption(String key) {
   if (key == kOptionAllowTerminalClipboardWrite) {
     return bind.mainGetLocalOption(key: key);

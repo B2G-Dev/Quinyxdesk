@@ -418,12 +418,14 @@ class _GeneralState extends State<_General> {
         if (!isWeb) service(),
         theme(),
         _Card(title: 'Language', children: [language()]),
-        if (!isWeb) hwcodec(),
+        sessions(),
+        if (!isWeb) performance(),
+        if (!bind.isIncomingOnly()) p2p(),
         if (!isWeb) audio(context),
         if (!isWeb) record(context),
         if (!isWeb) WaylandCard(),
-        other(),
         if (!bind.isIncomingOnly()) keyboardShortcuts(),
+        updates(),
       ],
     ).marginOnly(bottom: _kListViewBottomMargin);
   }
@@ -521,17 +523,21 @@ class _GeneralState extends State<_General> {
     });
   }
 
-  Widget other() {
+  // Opções de quando você acessa outro dispositivo (abas, barra de ferramentas, sessão).
+  Widget sessions() {
     final incomingOnly = bind.isIncomingOnly();
-    final outgoingOnly = bind.isOutgoingOnly();
-    // The updater pulls the official RustDesk build, which would replace this client.
-    final showAutoUpdate =
-        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
     final children = <Widget>[
       if (!isWeb && !incomingOnly)
         _OptionCheckBox(context, 'Confirm before closing multiple tabs',
             kOptionEnableConfirmClosingTabs,
             isServer: false),
+      if (!isWeb && !incomingOnly)
+        _OptionCheckBox(
+          context,
+          'Open connection in new tab',
+          kOptionOpenNewConnInTabs,
+          isServer: false,
+        ),
       if (!incomingOnly)
         _OptionCheckBox(
           context,
@@ -542,113 +548,24 @@ class _GeneralState extends State<_General> {
             reloadAllWindows();
           },
         ),
-      if (!isWeb && !outgoingOnly)
-        _OptionCheckBox(context, 'Adaptive bitrate', kOptionEnableAbr),
-      if (!isWeb) wallpaper(),
       if (!isWeb && !incomingOnly) ...[
         _OptionCheckBox(
           context,
-          'Open connection in new tab',
-          kOptionOpenNewConnInTabs,
-          isServer: false,
-        ),
-        Tooltip(
-          message: translate('port-forward-mux-tip'),
-          child: _OptionCheckBox(
-            context,
-            'Reuse one connection for port forwarding',
-            kOptionEnablePortForwardMux,
-            isServer: false,
-          ),
-        ),
-        // though this is related to GUI, but opengl problem affects all users, so put in config rather than local
-        if (isLinux)
-          Tooltip(
-            message: translate('software_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Always use software rendering",
-              kOptionAllowAlwaysSoftwareRender,
-            ),
-          ),
-        if (!isWeb)
-          Tooltip(
-            message: translate('texture_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use texture rendering",
-              kOptionTextureRender,
-              optGetter: bind.mainGetUseTextureRender,
-              optSetter: (k, v) async =>
-                  await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
-            ),
-          ),
-        if (isWindows)
-          Tooltip(
-            message: translate('d3d_render_tip'),
-            child: _OptionCheckBox(
-              context,
-              "Use D3D rendering",
-              kOptionD3DRender,
-              isServer: false,
-            ),
-          ),
-      ],
-      if (!isWeb && !bind.isCustomClient())
-        _OptionCheckBox(
-          context,
-          'Check for software update on startup',
-          kOptionEnableCheckUpdate,
-          isServer: false,
-        ),
-      if (showAutoUpdate)
-        _OptionCheckBox(
-          context,
-          'Auto update',
-          kOptionAllowAutoUpdate,
-          isServer: true,
-        ),
-      if (isWindows && !outgoingOnly)
-        _OptionCheckBox(
-          context,
-          'Capture screen using DirectX',
-          kOptionDirectxCapture,
-        ),
-      if (!isWeb && !incomingOnly) ...[
-        _OptionCheckBox(
-          context,
-          'Enable TCP hole punching',
-          kOptionEnableTcpPunch,
+          'Sync clipboard between sessions',
+          kOptionAllowSyncClipboardBetweenSessions,
           isServer: false,
         ),
         _OptionCheckBox(
           context,
-          'Enable UDP hole punching',
-          kOptionEnableUdpPunch,
-          isServer: false,
-        ),
-        _OptionCheckBox(
-          context,
-          'Enable IPv6 P2P connection',
-          kOptionEnableIpv6Punch,
+          'Reuse one connection for port forwarding',
+          kOptionEnablePortForwardMux,
           isServer: false,
         ),
       ],
-      if (!incomingOnly) ...webrtcOptions(context),
-      if (!isWeb && !incomingOnly)
-        Tooltip(
-          message: translate('sync-clipboard-between-sessions-tip'),
-          child: _OptionCheckBox(
-            context,
-            'Sync clipboard between sessions',
-            kOptionAllowSyncClipboardBetweenSessions,
-            isServer: false,
-          ),
-        ),
     ];
 
     // Add client-side wakelock option for desktop platforms
-    if (!bind.isIncomingOnly()) {
+    if (!incomingOnly) {
       children.add(_OptionCheckBox(
         context,
         'keep-awake-during-outgoing-sessions-label',
@@ -713,7 +630,110 @@ class _GeneralState extends State<_General> {
         ).marginOnly(left: _kCheckBoxLeftMargin * 3),
       ));
     }
-    return _Card(title: 'Other', children: children);
+    return _Card(title: 'Sessões remotas', children: children);
+  }
+
+  // Captura, codificação e renderização da imagem (não existe no Web).
+  Widget performance() {
+    final incomingOnly = bind.isIncomingOnly();
+    final outgoingOnly = bind.isOutgoingOnly();
+    return _Card(title: 'Vídeo e desempenho', children: [
+      if (bind.mainHasHwcodec() || bind.mainHasVram())
+        _OptionCheckBox(
+          context,
+          'Enable hardware codec',
+          kOptionEnableHwcodec,
+          update: (bool v) {
+            if (v) {
+              bind.mainCheckHwcodec();
+            }
+          },
+        ),
+      if (!outgoingOnly)
+        _OptionCheckBox(context, 'Adaptive bitrate', kOptionEnableAbr),
+      if (isWindows && !outgoingOnly)
+        _OptionCheckBox(
+          context,
+          'Capture screen using DirectX',
+          kOptionDirectxCapture,
+        ),
+      wallpaper(),
+      if (!incomingOnly) ...[
+        // though this is related to GUI, but opengl problem affects all users, so put in config rather than local
+        if (isLinux)
+          _OptionCheckBox(
+            context,
+            "Always use software rendering",
+            kOptionAllowAlwaysSoftwareRender,
+          ),
+        _OptionCheckBox(
+          context,
+          "Use texture rendering",
+          kOptionTextureRender,
+          optGetter: bind.mainGetUseTextureRender,
+          optSetter: (k, v) async =>
+              await bind.mainSetLocalOption(key: k, value: v ? 'Y' : 'N'),
+        ),
+        if (isWindows)
+          _OptionCheckBox(
+            context,
+            "Use D3D rendering",
+            kOptionD3DRender,
+            isServer: false,
+          ),
+      ],
+    ]);
+  }
+
+  // Tentativas de conexão direta antes de cair no servidor de retransmissão.
+  Widget p2p() {
+    return _Card(title: 'Conexão direta (P2P)', children: [
+      if (!isWeb) ...[
+        _OptionCheckBox(
+          context,
+          'Enable TCP hole punching',
+          kOptionEnableTcpPunch,
+          isServer: false,
+        ),
+        _OptionCheckBox(
+          context,
+          'Enable UDP hole punching',
+          kOptionEnableUdpPunch,
+          isServer: false,
+        ),
+        _OptionCheckBox(
+          context,
+          'Enable IPv6 P2P connection',
+          kOptionEnableIpv6Punch,
+          isServer: false,
+        ),
+      ],
+      ...webrtcOptions(context),
+    ]);
+  }
+
+  Widget updates() {
+    // The updater pulls the official RustDesk build, which would replace this client.
+    final showAutoUpdate =
+        isWindows && bind.mainIsInstalled() && !bind.isCustomClient();
+    final children = <Widget>[
+      if (!isWeb && !bind.isCustomClient())
+        _OptionCheckBox(
+          context,
+          'Check for software update on startup',
+          kOptionEnableCheckUpdate,
+          isServer: false,
+        ),
+      if (showAutoUpdate)
+        _OptionCheckBox(
+          context,
+          'Auto update',
+          kOptionAllowAutoUpdate,
+          isServer: true,
+        ),
+    ];
+    if (children.isEmpty) return const Offstage();
+    return _Card(title: 'Atualizações', children: children);
   }
 
   Widget wallpaper() {
@@ -753,26 +773,6 @@ class _GeneralState extends State<_General> {
 
       return Offstage();
     });
-  }
-
-  Widget hwcodec() {
-    final hwcodec = bind.mainHasHwcodec();
-    final vram = bind.mainHasVram();
-    return Offstage(
-      offstage: !(hwcodec || vram),
-      child: _Card(title: 'Hardware Codec', children: [
-        _OptionCheckBox(
-          context,
-          'Enable hardware codec',
-          kOptionEnableHwcodec,
-          update: (bool v) {
-            if (v) {
-              bind.mainCheckHwcodec();
-            }
-          },
-        )
-      ]),
-    );
   }
 
   Widget audio(BuildContext context) {
@@ -1081,11 +1081,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                           onChanged: enabled ? onChanged : null)
                       .marginOnly(right: 5),
                   Expanded(
-                      child: Text(
-                    translate('enable-2fa-title'),
-                    style:
-                        TextStyle(color: disabledTextColor(context, enabled)),
-                  ))
+                      child: _optionLabel(context, 'enable-2fa-title', enabled))
                 ],
               )),
         ),
@@ -1124,11 +1120,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                               onChanged: enabled ? onChangedBot : null)
                           .marginOnly(right: 5),
                       Expanded(
-                          child: Text(
-                        translate('Telegram bot'),
-                        style: TextStyle(
-                            color: disabledTextColor(context, enabled)),
-                      ))
+                          child: _optionLabel(context, 'Telegram bot', enabled))
                     ],
                   ))),
         ),
@@ -1490,9 +1482,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                       onChanged: enabled ? (_) => onChanged(!value) : null)
                   .marginOnly(right: 5),
               Expanded(
-                child: Text(translate('Enable RDP session sharing'),
-                    style:
-                        TextStyle(color: disabledTextColor(context, enabled))),
+                child: _optionLabel(context, 'Enable RDP session sharing', enabled),
               )
             ],
           ).marginOnly(left: _kCheckBoxLeftMargin),
@@ -1599,11 +1589,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                     ),
                   ),
                   Expanded(
-                      child: Text(
-                    translate('Use IP Whitelisting'),
-                    style:
-                        TextStyle(color: disabledTextColor(context, enabled)),
-                  ))
+                      child: _optionLabel(context, 'Use IP Whitelisting', enabled))
                 ],
               )),
         ),
@@ -1649,10 +1635,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                   ),
                 ),
                 Expanded(
-                    child: Text(
-                  translate('Use ID whitelisting'),
-                  style: TextStyle(color: disabledTextColor(context, enabled)),
-                ))
+                    child: _optionLabel(context, 'Use ID whitelisting', enabled))
               ],
             )),
       ),
@@ -1784,10 +1767,7 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
                       onChanged: enabled && !isOptFixed ? onChanged : null)
                   .marginOnly(right: 5),
               Expanded(
-                  child: Text(
-                translate('Unlock with PIN'),
-                style: TextStyle(color: disabledTextColor(context, enabled)),
-              ))
+                  child: _optionLabel(context, 'Unlock with PIN', enabled))
             ],
           )),
       onTap: enabled
@@ -1883,9 +1863,15 @@ class _NetworkState extends State<_Network> with AutomaticKeepAliveClientMixin {
               style: TextStyle(fontSize: _kContentFontSize),
             );
 
+      final description = _kOptionDescriptions[title];
       return ListTile(
         leading: Icon(icon, color: _accentColor),
         title: titleWidget,
+        subtitle: description == null
+            ? null
+            : Text(description,
+                style: TextStyle(
+                    fontSize: 12, color: Theme.of(context).hintColor)),
         enabled: !locked,
         onTap: onTap,
         trailing: trailing,
@@ -2258,7 +2244,8 @@ class _DisplayState extends State<_Display> {
                     onChanged: isOptFixed ? null : (_) => onChanged(!value))
                 .marginOnly(right: 5),
             Expanded(
-              child: Text(translate(label)),
+              child: _optionLabel(context, label, true,
+                  description: otherDefaultDescriptions[key]),
             )
           ],
         ).marginOnly(left: _kCheckBoxLeftMargin),
@@ -2697,6 +2684,19 @@ Widget _Card(
                     ...?title_suffix
                   ],
                 ).marginOnly(left: _kContentHMargin, top: 10, bottom: 10),
+                if (_kCardDescriptions[title] != null)
+                  Builder(
+                    builder: (context) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(_kCardDescriptions[title]!,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).hintColor)),
+                    ),
+                  ).marginOnly(
+                      left: _kContentHMargin,
+                      right: _kContentHMargin,
+                      bottom: 6),
                 ...children
                     .map((e) => e.marginOnly(top: 4, right: _kContentHMargin)),
               ],
@@ -2769,16 +2769,10 @@ Widget _OptionCheckBox(
           // Without `trailing`, keep the original Expanded(Text) layout.
           if (trailing == null)
             Expanded(
-                child: Text(
-              translate(label),
-              style: TextStyle(color: disabledTextColor(context, enabled)),
-            ))
+                child: _optionLabel(context, label, enabled))
           else ...[
             Flexible(
-              child: Text(
-                translate(label),
-                style: TextStyle(color: disabledTextColor(context, enabled)),
-              ),
+              child: _optionLabel(context, label, enabled),
             ),
             trailing,
             const Spacer(),
@@ -2793,6 +2787,172 @@ Widget _OptionCheckBox(
         : null,
   );
 }
+
+// Rótulo de uma opção com a legenda logo abaixo, quando houver uma em _kOptionDescriptions.
+Widget _optionLabel(BuildContext context, String label, bool enabled,
+    {String? description}) {
+  final text = Text(
+    translate(label),
+    style: TextStyle(color: disabledTextColor(context, enabled)),
+  );
+  description ??= _kOptionDescriptions[label];
+  if (description == null) return text;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      text,
+      Text(description,
+          style: TextStyle(fontSize: 12, color: Theme.of(context).hintColor)),
+    ],
+  ).marginSymmetric(vertical: 4);
+}
+
+// Legendas em pt-BR fixo, como os demais textos próprios do QuinyxDesk.
+// Chave: o rótulo (chave de tradução) passado ao checkbox ou ao item da aba Rede.
+const _kOptionDescriptions = {
+  // Geral > Sessões remotas
+  'Confirm before closing multiple tabs':
+      'Pede confirmação antes de fechar uma janela com vários acessos abertos.',
+  'Open connection in new tab':
+      'Abre cada novo acesso como aba da mesma janela, em vez de uma janela separada.',
+  'allow-remote-toolbar-docking-any-edge':
+      'Permite prender a barra de ferramentas do acesso em qualquer borda da janela.',
+  'Sync clipboard between sessions':
+      'O que você copia em um acesso também vai para os outros acessos abertos.',
+  'Reuse one connection for port forwarding':
+      'Leva todas as conexões de um túnel de porta por uma única conexão, sem novo login a cada uma.',
+  'keep-awake-during-outgoing-sessions-label':
+      'Impede que este computador entre em suspensão enquanto você acessa outro dispositivo.',
+  'note-at-conn-end-tip':
+      'Ao encerrar um acesso, pede uma anotação sobre o atendimento. Exige login.',
+  'Show monitor switch button on the main toolbar':
+      'Mostra o botão de trocar de monitor na barra de ferramentas do acesso.',
+  'Show on the minimized toolbar':
+      'Mantém o botão visível também com a barra recolhida.',
+  // Geral > Vídeo e desempenho
+  'Enable hardware codec':
+      'Usa a placa de vídeo para codificar e decodificar a imagem. Alivia a CPU.',
+  'Adaptive bitrate':
+      'Ajusta a qualidade da imagem sozinho conforme a velocidade da rede.',
+  'Capture screen using DirectX':
+      'Captura a tela deste computador via DirectX. Desative se a imagem ficar preta ou travada.',
+  'Remove wallpaper during incoming sessions':
+      'Esconde o papel de parede enquanto este computador é acessado, para economizar rede.',
+  'Always use software rendering':
+      'Desenha a imagem sem a placa de vídeo. Ajuda se a janela remota fecha logo ao conectar. Exige reiniciar o app.',
+  'Use texture rendering':
+      'Deixa a imagem remota mais fluida. Desative se aparecerem falhas na imagem.',
+  'Use D3D rendering':
+      'Desenha a imagem remota com Direct3D. Em alguns computadores a tela fica preta.',
+  // Geral > Conexão direta (P2P)
+  'Enable TCP hole punching':
+      'Tenta conexão direta via TCP antes de usar o servidor de retransmissão. Pode reduzir o atraso.',
+  'Enable UDP hole punching':
+      'Tenta conexão direta via UDP. Costuma ser mais rápida que a retransmissão, mas alguns roteadores bloqueiam.',
+  'Enable IPv6 P2P connection':
+      'Tenta conexão direta pelo IPv6 quando os dois dispositivos têm endereço IPv6.',
+  'Enable WebRTC P2P connection':
+      'Tenta conexão direta via WebRTC, que atravessa melhor alguns tipos de rede (NAT).',
+  // Geral > Gravação, Atalhos, Atualizações
+  'Automatically record incoming sessions':
+      'Grava toda sessão em que este computador é acessado.',
+  'Automatically record outgoing sessions':
+      'Grava toda sessão em que você acessa outro dispositivo.',
+  'Enable keyboard shortcuts in remote session':
+      'Ativa os atalhos de teclado do app durante o acesso remoto.',
+  'Pass-through to remote':
+      'Envia os atalhos ao dispositivo remoto em vez de executá-los aqui.',
+  'Check for software update on startup':
+      'Procura uma versão nova sempre que o app é aberto.',
+  'Auto update': 'Instala as atualizações sozinho.',
+  // Segurança > Permissões
+  'Enable keyboard/mouse':
+      'Quem acessa pode usar o teclado e o mouse deste computador.',
+  'Enable remote printer':
+      'Impressões feitas aqui durante o acesso podem sair na impressora de quem acessa.',
+  'Enable clipboard':
+      'Copiar e colar entre este computador e quem acessa.',
+  'Enable file transfer': 'Quem acessa pode enviar e receber arquivos.',
+  'Enable audio': 'Transmite o som deste computador para quem acessa.',
+  'Enable camera': 'Quem acessa pode ver as câmeras deste computador.',
+  'Enable terminal':
+      'Quem acessa pode abrir um terminal (linha de comando) neste computador.',
+  'Enable TCP tunneling':
+      'Quem acessa pode criar túneis de porta TCP por este computador.',
+  'Enable remote restart': 'Quem acessa pode reiniciar este computador.',
+  'Enable recording session': 'Quem acessa pode gravar a sessão.',
+  'Enable blocking user input':
+      'Quem acessa pode bloquear o teclado e o mouse de quem está na frente deste computador.',
+  'Enable privacy mode':
+      'Quem acessa pode apagar a tela deste computador para quem está na frente dele.',
+  'Enable remote configuration modification':
+      'Quem acessa pode alterar as configurações do app neste computador.',
+  // Segurança > 2FA
+  'enable-2fa-title':
+      'Além da senha, exige um código do aplicativo autenticador para aceitar conexões.',
+  'Telegram bot':
+      'Envia o código de verificação por um bot do Telegram, que também avisa das conexões.',
+  'Enable trusted devices':
+      'Dispositivos confiáveis não precisam informar o código de verificação.',
+  // Segurança > Segurança
+  'Enable RDP session sharing':
+      'Permite acessar também sessões abertas pela Área de Trabalho Remota (RDP).',
+  'Deny LAN discovery':
+      'Este computador deixa de aparecer na busca de dispositivos da rede local.',
+  'Enable direct IP access':
+      'Permite conectar direto pelo IP e porta, sem passar pelo servidor. Útil dentro da mesma rede.',
+  'Use IP Whitelisting':
+      'Só aceita conexões vindas dos endereços IP cadastrados.',
+  'Use ID whitelisting': 'Só aceita conexões vindas dos IDs cadastrados.',
+  'auto_disconnect_option_tip':
+      'Encerra a sessão recebida depois do tempo definido sem uso de teclado ou mouse.',
+  'keep-awake-during-incoming-sessions-label':
+      'Impede que este computador entre em suspensão enquanto está sendo acessado.',
+  'allow-only-conn-window-open-tip':
+      'Recusa conexões quando a janela do app está fechada.',
+  'Unlock with PIN':
+      'Pede um PIN para desbloquear as configurações de segurança e rede.',
+  // Rede
+  'ID/Relay Server': 'Servidor que localiza os dispositivos e retransmite as conexões.',
+  'Socks5/Http(s) Proxy':
+      'Encaminha as conexões por um servidor proxy. Use quando a rede só libera a saída por proxy.',
+  'Use WebSocket':
+      'Conecta ao servidor via WebSocket (HTTPS). Ajuda em redes que bloqueiam as portas padrão, mas só funciona via retransmissão.',
+  'Allow insecure TLS fallback':
+      'Se o certificado TLS do servidor não for válido, conecta mesmo assim. Use só com servidor próprio de certificado autoassinado.',
+  'Disable UDP':
+      'Fala com o servidor só por TCP (porta 21116). Ajuda em redes que bloqueiam UDP.',
+  // Impressora
+  'auto-print-tip': 'Imprime sem perguntar, na impressora escolhida.',
+};
+
+// Legenda logo abaixo do título de um card, para cards cujo conteúdo não é autoexplicativo.
+const _kCardDescriptions = {
+  'Service':
+      'Liga ou desliga o serviço que permite que este computador seja acessado.',
+  'Audio Input Device':
+      'Microfone ou fonte de som enviada para quem acessa este computador.',
+  'Permissions':
+      'O que quem acessa este computador pode fazer. Escolha um modelo pronto ou personalize.',
+  'Password': 'Como as conexões recebidas são aprovadas e qual senha vale.',
+  'ID': 'Troca o ID que identifica este computador.',
+  'Default View Style': 'Como a tela remota aparece ao abrir um acesso.',
+  'Default Scroll Style':
+      'Como a tela remota rola quando é maior que a janela.',
+  'Default Image Quality':
+      'Equilíbrio entre nitidez da imagem e rapidez de resposta.',
+  'Default Codec':
+      'Formato de compressão do vídeo. No automático, o app escolhe o melhor disponível.',
+  'Default trackpad speed': 'Velocidade do touchpad durante os acessos.',
+  'Privacy mode':
+      'Método usado para apagar a tela do computador acessado.',
+  'Other Default Options':
+      'Valores iniciais de cada novo acesso. Podem ser mudados durante a sessão.',
+  'Outgoing Print Jobs':
+      'Impressões feitas neste computador durante um acesso saem na impressora de quem está acessando.',
+  'Incoming Print Jobs':
+      'O que fazer com as impressões enviadas pelo computador que você está acessando.',
+};
 
 // ignore: non_constant_identifier_names
 Widget _Radio<T>(BuildContext context,

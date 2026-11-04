@@ -1375,7 +1375,7 @@ class __DisplayPageState extends State<_DisplayPage> {
   SettingsTile otherRow(String label, String key) {
     final value = getOtherDefaultSettingOption(key) == 'Y';
     final isOptFixed = isOtherDefaultSettingReadOnly(key);
-    final description = _otherDefaultDescriptions[key];
+    final description = otherDefaultDescriptions[key];
     return SettingsTile.switchTile(
       initialValue: value,
       title: Text(translate(label)),
@@ -1392,33 +1392,6 @@ class __DisplayPageState extends State<_DisplayPage> {
     );
   }
 }
-
-// Legendas das "Outras opções padrão" (lista compartilhada com o desktop em setting_widgets.dart).
-const _otherDefaultDescriptions = {
-  kOptionViewOnly: 'Abre os acessos só para ver, sem controlar teclado e mouse.',
-  kOptionShowRemoteCursor: 'Desenha o cursor do aparelho remoto na imagem.',
-  kOptionFollowRemoteCursor:
-      'A visualização acompanha o cursor do aparelho remoto.',
-  kOptionFollowRemoteWindow:
-      'A visualização acompanha a janela em foco no aparelho remoto.',
-  kOptionShowQualityMonitor:
-      'Mostra taxa de quadros, atraso e velocidade da conexão sobre a imagem.',
-  kOptionDisableAudio: 'Não reproduz o som do aparelho remoto.',
-  kOptionDisableClipboard:
-      'Não sincroniza a área de transferência entre os aparelhos.',
-  kOptionLockAfterSessionEnd:
-      'Bloqueia o aparelho remoto quando o acesso termina.',
-  kOptionPrivacyMode:
-      'Apaga a tela do aparelho remoto para quem está na frente dele, quando suportado.',
-  kOptionI444:
-      'Cores mais fiéis (bom para texto e imagens), com mais uso de rede e processamento.',
-  kKeyReverseMouseWheel: 'Inverte o sentido da rolagem.',
-  kOptionSwapLeftRightMouse: 'Troca os botões esquerdo e direito do mouse.',
-  kOptionTerminalPersistent:
-      'Mantém as sessões de terminal abertas no aparelho remoto ao desconectar.',
-  kOptionAllowTerminalClipboardWrite:
-      'Permite que programas do terminal remoto copiem para a área de transferência.',
-};
 
 class _ManageTrustedDevices extends StatefulWidget {
   const _ManageTrustedDevices();
