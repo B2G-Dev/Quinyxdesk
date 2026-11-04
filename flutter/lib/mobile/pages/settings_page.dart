@@ -309,10 +309,21 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       ],
     ));
     final List<AbstractSettingsTile> enhancementsTiles = [];
+    final disabledSettings = bind.isDisableSettings();
+    final hideSecuritySettings =
+        bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) == 'Y';
+    // Opções de quem recebe o acesso (este aparelho compartilhando a tela).
+    final showShareScreen = isAndroid &&
+        !disabledSettings &&
+        !outgoingOnly &&
+        !hideSecuritySettings;
     final enable2fa = bind.mainHasValid2FaSync();
+    // Legendas em pt-BR fixo, como os demais textos próprios do QuinyxDesk.
     final List<AbstractSettingsTile> tfaTiles = [
       SettingsTile.switchTile(
         title: Text(translate('enable-2fa-title')),
+        description: Text(
+            'Além da senha, exige um código do aplicativo autenticador para aceitar conexões.'),
         initialValue: enable2fa,
         onToggle: (v) async {
           update() async {
@@ -332,6 +343,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (enable2fa)
         SettingsTile.switchTile(
           title: Text(translate('Telegram bot')),
+          description: Text('Envia o código de verificação por um bot do Telegram.'),
           initialValue: bind.mainHasValidBotSync(),
           onToggle: (v) async {
             update() async {
@@ -376,6 +388,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (enable2fa && _enableTrustedDevices)
         SettingsTile(
           title: Text(translate('Trust duration (days)')),
+          description: Text(
+              'Por quantos dias um dispositivo confiável dispensa o código.'),
           trailing: trustedDeviceExpiration(
             enabled: true,
             showLabel: false,
@@ -387,6 +401,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       if (enable2fa && _enableTrustedDevices)
         SettingsTile(
             title: Text(translate('Manage trusted devices')),
+            description: Text('Veja e remova os dispositivos confiáveis.'),
             trailing: Icon(Icons.arrow_forward_ios),
             onPressed: (context) {
               Navigator.push(context, MaterialPageRoute(builder: (context) {
@@ -397,6 +412,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     final List<AbstractSettingsTile> shareScreenTiles = [
       SettingsTile.switchTile(
         title: Text(translate('Deny LAN discovery')),
+        description: Text(
+            'Este aparelho deixa de aparecer na busca de dispositivos da rede local.'),
         initialValue: _denyLANDiscovery,
         onToggle: isOptionFixed(kOptionEnableLanDiscovery)
             ? null
@@ -420,6 +437,8 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                       color: Color.fromARGB(255, 255, 204, 0)))
               .marginOnly(left: 5)
         ]),
+        description:
+            Text('Só aceita conexões vindas dos endereços IP cadastrados.'),
         initialValue: _onlyWhiteList,
         onToggle: (_) async {
           update() async {
@@ -443,6 +462,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                       color: Color.fromARGB(255, 255, 204, 0)))
               .marginOnly(left: 5)
         ]),
+        description: Text('Só aceita conexões vindas dos IDs cadastrados.'),
         initialValue: _onlyIdWhiteList,
         onToggle: (_) async {
           update() async {
@@ -456,53 +476,6 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
 
           changeIdWhiteList(callback: update);
         },
-      ),
-      SettingsTile.switchTile(
-        title: Text(translate('Adaptive bitrate')),
-        initialValue: _enableAbr,
-        onToggle: isOptionFixed(kOptionEnableAbr)
-            ? null
-            : (v) async {
-                await mainSetBoolOption(kOptionEnableAbr, v);
-                final newValue = await mainGetBoolOption(kOptionEnableAbr);
-                setState(() {
-                  _enableAbr = newValue;
-                });
-              },
-      ),
-      // Textos fixos em pt-BR, como os demais textos próprios do QuinyxDesk.
-      if (isAndroid)
-        SettingsTile.switchTile(
-          title: Text('Reduzir resolução da captura'),
-          description: Text(
-              'Usa metade da resolução quando não há codificador de vídeo por hardware. '
-              'Alivia a CPU, mas a imagem fica menos nítida. Vale na próxima conexão.'),
-          initialValue: _halfScale,
-          onToggle: isOptionFixed(kOptionEnableAndroidSoftwareEncodingHalfScale)
-              ? null
-              : (v) async {
-                  await mainSetBoolOption(
-                      kOptionEnableAndroidSoftwareEncodingHalfScale, v);
-                  final newValue = await mainGetBoolOption(
-                      kOptionEnableAndroidSoftwareEncodingHalfScale);
-                  setState(() {
-                    _halfScale = newValue;
-                  });
-                },
-        ),
-      SettingsTile.switchTile(
-        title: Text(translate('Enable recording session')),
-        initialValue: _enableRecordSession,
-        onToggle: isOptionFixed(kOptionEnableRecordSession)
-            ? null
-            : (v) async {
-                await mainSetBoolOption(kOptionEnableRecordSession, v);
-                final newValue =
-                    await mainGetBoolOption(kOptionEnableRecordSession);
-                setState(() {
-                  _enableRecordSession = newValue;
-                });
-              },
       ),
       SettingsTile.switchTile(
         title: Row(
@@ -540,6 +513,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                             }))
             ]),
         initialValue: _enableDirectIPAccess,
+        description: Text('Permite conectar direto pelo IP, sem passar pelo servidor. Útil dentro da mesma rede.'),
         onToggle: isOptionFixed(kOptionDirectServer)
             ? null
             : (_) async {
@@ -587,6 +561,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                             }))
             ]),
         initialValue: _allowAutoDisconnect,
+        description: Text('Encerra a sessão recebida depois do tempo definido sem uso de teclado ou mouse.'),
         onToggle: isOptionFixed(kOptionAllowAutoDisconnect)
             ? null
             : (_) async {
@@ -674,6 +649,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       enhancementsTiles.add(
         SettingsTile.switchTile(
           initialValue: _checkUpdateOnStartup,
+          description: Text('Procura uma versão nova sempre que o aplicativo é aberto.'),
           title:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(translate('Check for software update on startup')),
@@ -689,6 +665,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
     enhancementsTiles.add(
       SettingsTile.switchTile(
         initialValue: _showTerminalExtraKeys,
+        description: Text('Mostra uma barra com Esc, Ctrl, Tab e setas no terminal remoto.'),
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(translate('Show terminal extra keys')),
         ]),
@@ -732,6 +709,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
 
     enhancementsTiles.add(_getPopupDialogRadioEntry(
       title: 'Keep screen on',
+      description: 'Quando manter a tela deste aparelho acesa.',
       list: [
         _RadioEntry('Never', _keepScreenOnToOption(KeepScreenOn.never)),
         _RadioEntry('During controlled',
@@ -753,9 +731,146 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             },
     ));
 
-    final disabledSettings = bind.isDisableSettings();
-    final hideSecuritySettings =
-        bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) == 'Y';
+    final List<AbstractSettingsTile> networkTiles = [
+      // Servidor ID/Relay ocultado a pedido: a opção de troca e o modal
+      // ficam escondidos, mas o código é mantido para uso futuro.
+      // ignore: dead_code
+      if (_showServerSettings &&
+          !disabledSettings &&
+          !_hideNetwork &&
+          !_hideServer)
+        SettingsTile(
+            title: Text(translate('ID/Relay Server')),
+            leading: Icon(Icons.cloud),
+            onPressed: (context) {
+              showServerSettings(gFFI.dialogManager, (callback) async {
+                _isUsingPublicServer = await bind.mainIsUsingPublicServer();
+                setState(callback);
+              });
+            }),
+      if (!_hideNetwork && !_hideProxy)
+        SettingsTile(
+            title: Text(translate('Socks5/Http(s) Proxy')),
+            description: Text('Encaminha as conexões por um servidor proxy. Use quando a rede só libera a saída por proxy.'),
+            leading: Icon(Icons.network_ping),
+            onPressed: (context) {
+              changeSocks5Proxy();
+            }),
+      if (!disabledSettings && !_hideNetwork && !_hideWebSocket)
+        SettingsTile.switchTile(
+          title: Text(translate('Use WebSocket')),
+          description: Text('Conecta ao servidor via WebSocket (HTTPS). Ajuda em redes que bloqueiam as portas padrão, mas pode ser mais lento.'),
+          initialValue: _allowWebSocket,
+          onToggle: isOptionFixed(kOptionAllowWebSocket)
+              ? null
+              : (v) async {
+                  await mainSetBoolOption(kOptionAllowWebSocket, v);
+                  final newValue =
+                      await mainGetBoolOption(kOptionAllowWebSocket);
+                  setState(() {
+                    _allowWebSocket = newValue;
+                  });
+                },
+        ),
+      if (!_isUsingPublicServer)
+        SettingsTile.switchTile(
+          title: Text(translate('Allow insecure TLS fallback')),
+          description: Text('Se o certificado TLS do servidor não for válido, conecta mesmo assim. Use só com servidor próprio de certificado autoassinado.'),
+          initialValue: _allowInsecureTlsFallback,
+          onToggle: isOptionFixed(kOptionAllowInsecureTLSFallback)
+              ? null
+              : (v) async {
+                  await mainSetBoolOption(
+                      kOptionAllowInsecureTLSFallback, v);
+                  final newValue = mainGetBoolOptionSync(
+                      kOptionAllowInsecureTLSFallback);
+                  setState(() {
+                    _allowInsecureTlsFallback = newValue;
+                  });
+                },
+        ),
+      if (isAndroid && !outgoingOnly && !_isUsingPublicServer)
+        SettingsTile.switchTile(
+          title: Text(translate('Disable UDP')),
+          description: Text('Fala com o servidor só por TCP. Ajuda em redes que bloqueiam UDP.'),
+          initialValue: _disableUdp,
+          onToggle: isOptionFixed(kOptionDisableUdp)
+              ? null
+              : (v) async {
+                  await bind.mainSetOption(
+                      key: kOptionDisableUdp, value: v ? 'Y' : 'N');
+                  final newValue =
+                      bind.mainGetOptionSync(key: kOptionDisableUdp) == 'Y';
+                  setState(() {
+                    _disableUdp = newValue;
+                  });
+                },
+        ),
+      if (!incomingOnly)
+        SettingsTile.switchTile(
+          title: Text(translate('Enable TCP hole punching')),
+          description: Text('Tenta conexão direta via TCP antes de usar o servidor de retransmissão. Pode reduzir o atraso.'),
+          initialValue: _enableTcpPunch,
+          onToggle: isOptionFixed(kOptionEnableTcpPunch)
+              ? null
+              : (v) async {
+                  await mainSetLocalBoolOption(kOptionEnableTcpPunch, v);
+                  final newValue =
+                      mainGetLocalBoolOptionSync(kOptionEnableTcpPunch);
+                  setState(() {
+                    _enableTcpPunch = newValue;
+                  });
+                },
+        ),
+      if (!incomingOnly)
+        SettingsTile.switchTile(
+          title: Text(translate('Enable UDP hole punching')),
+          description: Text('Tenta conexão direta via UDP. Costuma ser mais rápida que a retransmissão, mas alguns roteadores bloqueiam.'),
+          initialValue: _enableUdpPunch,
+          onToggle: isOptionFixed(kOptionEnableUdpPunch)
+              ? null
+              : (v) async {
+                  await mainSetLocalBoolOption(kOptionEnableUdpPunch, v);
+                  final newValue =
+                      mainGetLocalBoolOptionSync(kOptionEnableUdpPunch);
+                  setState(() {
+                    _enableUdpPunch = newValue;
+                  });
+                },
+        ),
+      if (!incomingOnly)
+        SettingsTile.switchTile(
+          title: Text(translate('Enable IPv6 P2P connection')),
+          description: Text('Tenta conexão direta pelo IPv6 quando os dois aparelhos têm endereço IPv6.'),
+          initialValue: _enableIpv6Punch,
+          onToggle: isOptionFixed(kOptionEnableIpv6Punch)
+              ? null
+              : (v) async {
+                  await mainSetLocalBoolOption(kOptionEnableIpv6Punch, v);
+                  final newValue =
+                      mainGetLocalBoolOptionSync(kOptionEnableIpv6Punch);
+                  setState(() {
+                    _enableIpv6Punch = newValue;
+                  });
+                },
+        ),
+      if (!incomingOnly)
+        SettingsTile.switchTile(
+          title: Text(translate('Enable WebRTC P2P connection')),
+          description: Text('Tenta conexão direta via WebRTC, que atravessa melhor alguns tipos de rede (NAT).'),
+          initialValue: _enableWebrtc,
+          onToggle: isOptionFixed(kOptionEnableWebrtc)
+              ? null
+              : (v) async {
+                  await mainSetLocalBoolOption(kOptionEnableWebrtc, v);
+                  final newValue =
+                      mainGetLocalBoolOptionSync(kOptionEnableWebrtc);
+                  setState(() {
+                    _enableWebrtc = newValue;
+                  });
+                },
+        ),
+    ];
     final settings = SettingsList(
       sections: [
         customClientSection,
@@ -788,146 +903,10 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
               ),
             ],
           ),
-        SettingsSection(title: Text(translate("Settings")), tiles: [
-          // Servidor ID/Relay ocultado a pedido: a opção de troca e o modal
-          // ficam escondidos, mas o código é mantido para uso futuro.
-          // ignore: dead_code
-          if (_showServerSettings &&
-              !disabledSettings &&
-              !_hideNetwork &&
-              !_hideServer)
-            SettingsTile(
-                title: Text(translate('ID/Relay Server')),
-                leading: Icon(Icons.cloud),
-                onPressed: (context) {
-                  showServerSettings(gFFI.dialogManager, (callback) async {
-                    _isUsingPublicServer = await bind.mainIsUsingPublicServer();
-                    setState(callback);
-                  });
-                }),
-          if (!_hideNetwork && !_hideProxy)
-            SettingsTile(
-                title: Text(translate('Socks5/Http(s) Proxy')),
-                leading: Icon(Icons.network_ping),
-                onPressed: (context) {
-                  changeSocks5Proxy();
-                }),
-          if (isAndroid && !bind.isOutgoingOnly())
-            SettingsTile(
-                title: Text(translate('Deploy')),
-                leading: Icon(Icons.cloud_upload),
-                onPressed: (context) {
-                  showDeployDialog();
-                }),
-          if (!disabledSettings && !_hideNetwork && !_hideWebSocket)
-            SettingsTile.switchTile(
-              title: Text(translate('Use WebSocket')),
-              initialValue: _allowWebSocket,
-              onToggle: isOptionFixed(kOptionAllowWebSocket)
-                  ? null
-                  : (v) async {
-                      await mainSetBoolOption(kOptionAllowWebSocket, v);
-                      final newValue =
-                          await mainGetBoolOption(kOptionAllowWebSocket);
-                      setState(() {
-                        _allowWebSocket = newValue;
-                      });
-                    },
-            ),
-          if (!_isUsingPublicServer)
-            SettingsTile.switchTile(
-              title: Text(translate('Allow insecure TLS fallback')),
-              initialValue: _allowInsecureTlsFallback,
-              onToggle: isOptionFixed(kOptionAllowInsecureTLSFallback)
-                  ? null
-                  : (v) async {
-                      await mainSetBoolOption(
-                          kOptionAllowInsecureTLSFallback, v);
-                      final newValue = mainGetBoolOptionSync(
-                          kOptionAllowInsecureTLSFallback);
-                      setState(() {
-                        _allowInsecureTlsFallback = newValue;
-                      });
-                    },
-            ),
-          if (isAndroid && !outgoingOnly && !_isUsingPublicServer)
-            SettingsTile.switchTile(
-              title: Text(translate('Disable UDP')),
-              initialValue: _disableUdp,
-              onToggle: isOptionFixed(kOptionDisableUdp)
-                  ? null
-                  : (v) async {
-                      await bind.mainSetOption(
-                          key: kOptionDisableUdp, value: v ? 'Y' : 'N');
-                      final newValue =
-                          bind.mainGetOptionSync(key: kOptionDisableUdp) == 'Y';
-                      setState(() {
-                        _disableUdp = newValue;
-                      });
-                    },
-            ),
-          if (!incomingOnly)
-            SettingsTile.switchTile(
-              title: Text(translate('Enable TCP hole punching')),
-              initialValue: _enableTcpPunch,
-              onToggle: isOptionFixed(kOptionEnableTcpPunch)
-                  ? null
-                  : (v) async {
-                      await mainSetLocalBoolOption(kOptionEnableTcpPunch, v);
-                      final newValue =
-                          mainGetLocalBoolOptionSync(kOptionEnableTcpPunch);
-                      setState(() {
-                        _enableTcpPunch = newValue;
-                      });
-                    },
-            ),
-          if (!incomingOnly)
-            SettingsTile.switchTile(
-              title: Text(translate('Enable UDP hole punching')),
-              initialValue: _enableUdpPunch,
-              onToggle: isOptionFixed(kOptionEnableUdpPunch)
-                  ? null
-                  : (v) async {
-                      await mainSetLocalBoolOption(kOptionEnableUdpPunch, v);
-                      final newValue =
-                          mainGetLocalBoolOptionSync(kOptionEnableUdpPunch);
-                      setState(() {
-                        _enableUdpPunch = newValue;
-                      });
-                    },
-            ),
-          if (!incomingOnly)
-            SettingsTile.switchTile(
-              title: Text(translate('Enable IPv6 P2P connection')),
-              initialValue: _enableIpv6Punch,
-              onToggle: isOptionFixed(kOptionEnableIpv6Punch)
-                  ? null
-                  : (v) async {
-                      await mainSetLocalBoolOption(kOptionEnableIpv6Punch, v);
-                      final newValue =
-                          mainGetLocalBoolOptionSync(kOptionEnableIpv6Punch);
-                      setState(() {
-                        _enableIpv6Punch = newValue;
-                      });
-                    },
-            ),
-          if (!incomingOnly)
-            SettingsTile.switchTile(
-              title: Text(translate('Enable WebRTC P2P connection')),
-              initialValue: _enableWebrtc,
-              onToggle: isOptionFixed(kOptionEnableWebrtc)
-                  ? null
-                  : (v) async {
-                      await mainSetLocalBoolOption(kOptionEnableWebrtc, v);
-                      final newValue =
-                          mainGetLocalBoolOptionSync(kOptionEnableWebrtc);
-                      setState(() {
-                        _enableWebrtc = newValue;
-                      });
-                    },
-            ),
+        SettingsSection(title: Text(translate('General')), tiles: [
           SettingsTile(
               title: Text(translate('Language')),
+              description: Text('Idioma da interface do aplicativo.'),
               leading: Icon(Icons.translate),
               onPressed: (context) {
                 showLanguageSettings(gFFI.dialogManager);
@@ -937,6 +916,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 Theme.of(context).brightness == Brightness.light
                     ? 'Light Theme'
                     : 'Dark Theme')),
+            description: Text('Claro, escuro ou igual ao do sistema.'),
             leading: Icon(Theme.of(context).brightness == Brightness.light
                 ? Icons.dark_mode
                 : Icons.light_mode),
@@ -965,6 +945,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
           if (!bind.isDisableAccount())
             SettingsTile.switchTile(
               title: Text(translate('note-at-conn-end-tip')),
+              description: Text('Ao encerrar um acesso a outro dispositivo, pede uma anotação sobre o atendimento. Exige login.'),
               initialValue: _allowAskForNoteAtEndOfConnection,
               onToggle: (v) async {
                 if (v && !gFFI.userModel.isLogin) {
@@ -984,6 +965,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
             SettingsTile.switchTile(
               title:
                   Text(translate('keep-awake-during-outgoing-sessions-label')),
+              description: Text('Impede que este aparelho entre em suspensão enquanto você acessa outro dispositivo.'),
               initialValue: _preventSleepWhileConnected,
               onToggle: (v) async {
                 await mainSetLocalBoolOption(
@@ -993,11 +975,25 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 });
               },
             ),
+          if (isAndroid && !bind.isOutgoingOnly())
+            SettingsTile(
+                title: Text(translate('Deploy')),
+                description: Text('Registra este aparelho no servidor usando um token de implantação.'),
+                leading: Icon(Icons.cloud_upload),
+                onPressed: (context) {
+                  showDeployDialog();
+                }),
         ]),
+        if (showShareScreen)
+          SettingsSection(
+            title: Text(translate('Security')),
+            tiles: [...tfaTiles, ...shareScreenTiles],
+          ),
         if (isAndroid)
-          SettingsSection(title: Text(translate('Hardware Codec')), tiles: [
+          SettingsSection(title: Text('Vídeo'), tiles: [
             SettingsTile.switchTile(
               title: Text(translate('Enable hardware codec')),
+              description: Text('Usa o codificador de vídeo do aparelho, quando houver. Alivia a CPU e deixa a imagem mais fluida.'),
               initialValue: _enableHardwareCodec,
               onToggle: isOptionFixed(kOptionEnableHwcodec)
                   ? null
@@ -1010,77 +1006,115 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                       });
                     },
             ),
+            if (showShareScreen)
+              SettingsTile.switchTile(
+                title: Text(translate('Adaptive bitrate')),
+                description: Text('Ajusta a qualidade da imagem sozinho conforme a velocidade da rede.'),
+                initialValue: _enableAbr,
+                onToggle: isOptionFixed(kOptionEnableAbr)
+                    ? null
+                    : (v) async {
+                        await mainSetBoolOption(kOptionEnableAbr, v);
+                        final newValue = await mainGetBoolOption(kOptionEnableAbr);
+                        setState(() {
+                          _enableAbr = newValue;
+                        });
+                      },
+              ),
+            if (showShareScreen)
+              SettingsTile.switchTile(
+                title: Text('Reduzir resolução da captura'),
+                description: Text(
+                    'Usa metade da resolução quando não há codificador de vídeo por hardware. '
+                    'Alivia a CPU, mas a imagem fica menos nítida. Vale na próxima conexão.'),
+                initialValue: _halfScale,
+                onToggle: isOptionFixed(kOptionEnableAndroidSoftwareEncodingHalfScale)
+                    ? null
+                    : (v) async {
+                        await mainSetBoolOption(
+                            kOptionEnableAndroidSoftwareEncodingHalfScale, v);
+                        final newValue = await mainGetBoolOption(
+                            kOptionEnableAndroidSoftwareEncodingHalfScale);
+                        setState(() {
+                          _halfScale = newValue;
+                        });
+                      },
+              ),
           ]),
         if (isAndroid)
-          SettingsSection(
-            title: Text(translate("Recording")),
-            tiles: [
-              if (!outgoingOnly)
-                SettingsTile.switchTile(
-                  title:
-                      Text(translate('Automatically record incoming sessions')),
-                  initialValue: _autoRecordIncomingSession,
-                  onToggle: isOptionFixed(kOptionAllowAutoRecordIncoming)
-                      ? null
-                      : (v) async {
-                          await bind.mainSetOption(
-                              key: kOptionAllowAutoRecordIncoming,
-                              value: bool2option(
-                                  kOptionAllowAutoRecordIncoming, v));
-                          final newValue = option2bool(
-                              kOptionAllowAutoRecordIncoming,
-                              await bind.mainGetOption(
-                                  key: kOptionAllowAutoRecordIncoming));
-                          setState(() {
-                            _autoRecordIncomingSession = newValue;
-                          });
-                        },
-                ),
-              if (!incomingOnly)
-                SettingsTile.switchTile(
-                  title:
-                      Text(translate('Automatically record outgoing sessions')),
-                  initialValue: _autoRecordOutgoingSession,
-                  onToggle: isOptionFixed(kOptionAllowAutoRecordOutgoing)
-                      ? null
-                      : (v) async {
-                          await bind.mainSetLocalOption(
-                              key: kOptionAllowAutoRecordOutgoing,
-                              value: bool2option(
-                                  kOptionAllowAutoRecordOutgoing, v));
-                          final newValue = option2bool(
-                              kOptionAllowAutoRecordOutgoing,
-                              bind.mainGetLocalOption(
-                                  key: kOptionAllowAutoRecordOutgoing));
-                          setState(() {
-                            _autoRecordOutgoingSession = newValue;
-                          });
-                        },
-                ),
-              SettingsTile(
-                title: Text(translate("Directory")),
-                description: Text(bind.mainVideoSaveDirectory(root: false)),
+          SettingsSection(title: Text('Gravação'), tiles: [
+            if (showShareScreen)
+              SettingsTile.switchTile(
+                title: Text(translate('Enable recording session')),
+                description: Text('Permite que quem acessa este aparelho grave a sessão.'),
+                initialValue: _enableRecordSession,
+                onToggle: isOptionFixed(kOptionEnableRecordSession)
+                    ? null
+                    : (v) async {
+                        await mainSetBoolOption(kOptionEnableRecordSession, v);
+                        final newValue =
+                            await mainGetBoolOption(kOptionEnableRecordSession);
+                        setState(() {
+                          _enableRecordSession = newValue;
+                        });
+                      },
               ),
-            ],
-          ),
-        if (isAndroid &&
-            !disabledSettings &&
-            !outgoingOnly &&
-            !hideSecuritySettings)
-          SettingsSection(title: Text('2FA'), tiles: tfaTiles),
-        if (isAndroid &&
-            !disabledSettings &&
-            !outgoingOnly &&
-            !hideSecuritySettings)
+            if (!outgoingOnly)
+              SettingsTile.switchTile(
+                title:
+                    Text(translate('Automatically record incoming sessions')),
+                description: Text('Grava toda sessão em que este aparelho é acessado.'),
+                initialValue: _autoRecordIncomingSession,
+                onToggle: isOptionFixed(kOptionAllowAutoRecordIncoming)
+                    ? null
+                    : (v) async {
+                        await bind.mainSetOption(
+                            key: kOptionAllowAutoRecordIncoming,
+                            value: bool2option(
+                                kOptionAllowAutoRecordIncoming, v));
+                        final newValue = option2bool(
+                            kOptionAllowAutoRecordIncoming,
+                            await bind.mainGetOption(
+                                key: kOptionAllowAutoRecordIncoming));
+                        setState(() {
+                          _autoRecordIncomingSession = newValue;
+                        });
+                      },
+              ),
+            if (!incomingOnly)
+              SettingsTile.switchTile(
+                title:
+                    Text(translate('Automatically record outgoing sessions')),
+                description: Text('Grava toda sessão em que você acessa outro dispositivo.'),
+                initialValue: _autoRecordOutgoingSession,
+                onToggle: isOptionFixed(kOptionAllowAutoRecordOutgoing)
+                    ? null
+                    : (v) async {
+                        await bind.mainSetLocalOption(
+                            key: kOptionAllowAutoRecordOutgoing,
+                            value: bool2option(
+                                kOptionAllowAutoRecordOutgoing, v));
+                        final newValue = option2bool(
+                            kOptionAllowAutoRecordOutgoing,
+                            bind.mainGetLocalOption(
+                                key: kOptionAllowAutoRecordOutgoing));
+                        setState(() {
+                          _autoRecordOutgoingSession = newValue;
+                        });
+                      },
+              ),
+            SettingsTile(
+              title: Text(translate("Directory")),
+              description: Text(bind.mainVideoSaveDirectory(root: false)),
+            ),
+          ]),
+        if (networkTiles.isNotEmpty)
           SettingsSection(
-            title: Text(translate("Share screen")),
-            tiles: shareScreenTiles,
+            title: Text(translate('Network')),
+            tiles: networkTiles,
           ),
         if (!bind.isIncomingOnly()) defaultDisplaySection(),
-        if (isAndroid &&
-            !disabledSettings &&
-            !outgoingOnly &&
-            !hideSecuritySettings)
+        if (showShareScreen)
           SettingsSection(
             title: Text(translate("Enhancements")),
             tiles: enhancementsTiles,
@@ -1139,6 +1173,7 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
       tiles: [
         SettingsTile(
             title: Text(translate('Display Settings')),
+            description: Text('Qualidade de imagem, escala e outras opções padrão para novos acessos.'),
             leading: Icon(Icons.desktop_windows_outlined),
             trailing: Icon(Icons.arrow_forward_ios),
             onPressed: (context) {
@@ -1269,6 +1304,8 @@ class __DisplayPageState extends State<_DisplayPage> {
           tiles: [
             _getPopupDialogRadioEntry(
               title: 'Default View Style',
+              description:
+                  'Como a tela remota aparece: tamanho original ou ajustada à tela deste aparelho.',
               list: [
                 _RadioEntry('Scale original', kRemoteViewStyleOriginal),
                 _RadioEntry('Scale adaptive', kRemoteViewStyleAdaptive)
@@ -1284,6 +1321,8 @@ class __DisplayPageState extends State<_DisplayPage> {
             ),
             _getPopupDialogRadioEntry(
               title: 'Default Image Quality',
+              description:
+                  'Equilíbrio entre nitidez da imagem e rapidez de resposta.',
               list: [
                 _RadioEntry('Good image quality', kRemoteImageQualityBest),
                 _RadioEntry('Balanced', kRemoteImageQualityBalanced),
@@ -1310,6 +1349,8 @@ class __DisplayPageState extends State<_DisplayPage> {
             ),
             _getPopupDialogRadioEntry(
               title: 'Default Codec',
+              description:
+                  'Formato de compressão do vídeo. No automático, o app escolhe o melhor disponível.',
               list: codecList,
               getter: () =>
                   bind.mainGetUserDefaultOption(key: kOptionCodecPreference),
@@ -1334,9 +1375,11 @@ class __DisplayPageState extends State<_DisplayPage> {
   SettingsTile otherRow(String label, String key) {
     final value = getOtherDefaultSettingOption(key) == 'Y';
     final isOptFixed = isOtherDefaultSettingReadOnly(key);
+    final description = _otherDefaultDescriptions[key];
     return SettingsTile.switchTile(
       initialValue: value,
       title: Text(translate(label)),
+      description: description == null ? null : Text(description),
       onToggle: isOptFixed
           ? null
           : (b) async {
@@ -1349,6 +1392,33 @@ class __DisplayPageState extends State<_DisplayPage> {
     );
   }
 }
+
+// Legendas das "Outras opções padrão" (lista compartilhada com o desktop em setting_widgets.dart).
+const _otherDefaultDescriptions = {
+  kOptionViewOnly: 'Abre os acessos só para ver, sem controlar teclado e mouse.',
+  kOptionShowRemoteCursor: 'Desenha o cursor do aparelho remoto na imagem.',
+  kOptionFollowRemoteCursor:
+      'A visualização acompanha o cursor do aparelho remoto.',
+  kOptionFollowRemoteWindow:
+      'A visualização acompanha a janela em foco no aparelho remoto.',
+  kOptionShowQualityMonitor:
+      'Mostra taxa de quadros, atraso e velocidade da conexão sobre a imagem.',
+  kOptionDisableAudio: 'Não reproduz o som do aparelho remoto.',
+  kOptionDisableClipboard:
+      'Não sincroniza a área de transferência entre os aparelhos.',
+  kOptionLockAfterSessionEnd:
+      'Bloqueia o aparelho remoto quando o acesso termina.',
+  kOptionPrivacyMode:
+      'Apaga a tela do aparelho remoto para quem está na frente dele, quando suportado.',
+  kOptionI444:
+      'Cores mais fiéis (bom para texto e imagens), com mais uso de rede e processamento.',
+  kKeyReverseMouseWheel: 'Inverte o sentido da rolagem.',
+  kOptionSwapLeftRightMouse: 'Troca os botões esquerdo e direito do mouse.',
+  kOptionTerminalPersistent:
+      'Mantém as sessões de terminal abertas no aparelho remoto ao desconectar.',
+  kOptionAllowTerminalClipboardWrite:
+      'Permite que programas do terminal remoto copiem para a área de transferência.',
+};
 
 class _ManageTrustedDevices extends StatefulWidget {
   const _ManageTrustedDevices();
@@ -1409,6 +1479,7 @@ SettingsTile _getPopupDialogRadioEntry({
   required List<_RadioEntry> list,
   required _RadioEntryGetter getter,
   required _RadioEntrySetter? asyncSetter,
+  String? description,
   Widget? tail,
   RxBool? showTail,
   String? notCloseValue,
@@ -1457,7 +1528,15 @@ SettingsTile _getPopupDialogRadioEntry({
   }
 
   return SettingsTile(
-    title: Text(translate(title)),
+    //? `value` tem prioridade sobre `description` no settings_ui, então a legenda vai no título.
+    title: description == null
+        ? Text(translate(title))
+        : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(translate(title)),
+            Builder(
+                builder: (context) => Text(description,
+                    style: Theme.of(context).textTheme.bodySmall)),
+          ]),
     onPressed: asyncSetter == null ? null : (context) => showDialog(),
     value: Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
