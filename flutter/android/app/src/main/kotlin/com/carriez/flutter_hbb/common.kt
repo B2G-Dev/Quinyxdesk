@@ -99,6 +99,14 @@ fun requestPermission(context: Context, type: String) {
         }
 }
 
+// With all-files access, peers get the whole shared storage; otherwise the app-scoped workspace.
+fun fileTransferHome(context: Context): String =
+    if (XXPermissions.isGranted(context, Permission.MANAGE_EXTERNAL_STORAGE)) {
+        android.os.Environment.getExternalStorageDirectory().path
+    } else {
+        (context.getExternalFilesDir(null) ?: context.filesDir).path
+    }
+
 fun startAction(context: Context, action: String) {
     try {
         context.startActivity(Intent(action).apply {

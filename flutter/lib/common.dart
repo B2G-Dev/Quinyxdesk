@@ -1526,6 +1526,13 @@ class AndroidPermissionManager {
   static Timer? _timer;
   static var _current = "";
 
+  static bool isWaitingFile() {
+    if (_completer != null) {
+      return !_completer!.isCompleted && _current == kManageExternalStorage;
+    }
+    return false;
+  }
+
   static Future<bool> check(String type) {
     if (isDesktop || isWeb) {
       return Future.value(true);

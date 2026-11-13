@@ -317,10 +317,22 @@ class ServerModel with ChangeNotifier {
       await showClientsMayNotBeChangedAlert(parent.target);
     }
     _fileOk = !_fileOk;
+    if (_fileOk && isAndroid) await requestAllFilesAccess();
     bind.mainSetOption(
         key: kOptionEnableFileTransfer,
         value: _fileOk ? defaultOptionYes : 'N');
     notifyListeners();
+  }
+
+  /// QuinyxDesk (uso interno): peers acessam todo o armazenamento quando
+  /// "Acesso a todos os arquivos" foi concedido.
+  Future<void> requestAllFilesAccess() async {
+    if (!await AndroidPermissionManager.check(kManageExternalStorage)) {
+      await AndroidPermissionManager.request(kManageExternalStorage);
+    }
+    final home =
+        await parent.target?.invokeMethodWithResult<String>('file_transfer_home');
+    if (home != null && home.isNotEmpty) await bind.mainSetHomeDir(home: home);
   }
 
   toggleClipboard() async {
@@ -402,6 +414,7 @@ class ServerModel with ChangeNotifier {
       }
     } else {
       if (isAndroid) {
+        await requestAllFilesAccess();
         try {
           await AndroidDocuments.requireLogFolder();
           await showAndroidFileTransferSetup(gFFI);

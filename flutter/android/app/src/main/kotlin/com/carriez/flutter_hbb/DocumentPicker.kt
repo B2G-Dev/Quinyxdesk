@@ -22,6 +22,7 @@ internal class DocumentPicker(private val activity: Activity) {
             } else {
                 result.success((activity.getExternalFilesDir(null) ?: activity.filesDir).path)
             }
+            "file_transfer_home" -> result.success(fileTransferHome(activity))
             "document_folder" -> pick(result, call.argument<Boolean>("share") == true)
             else -> return false
         }

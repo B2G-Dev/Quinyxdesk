@@ -226,6 +226,11 @@ class _ServerPageState extends State<ServerPage> {
 
 void checkService() async {
   gFFI.invokeMethod("check_service");
+  // MANAGE_EXTERNAL_STORAGE is granted in a system settings page; finish the wait on return.
+  if (AndroidPermissionManager.isWaitingFile()) {
+    AndroidPermissionManager.complete(kManageExternalStorage,
+        await AndroidPermissionManager.check(kManageExternalStorage));
+  }
 }
 
 class ServiceNotRunningNotification extends StatelessWidget {

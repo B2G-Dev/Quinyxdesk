@@ -51,7 +51,7 @@ internal class DocumentStorage(private val context: Context) {
         check(prefs.edit().remove(DEFAULT_LOCATION).commit()) {
             "Unable to remember the shared folder"
         }
-        return (context.getExternalFilesDir(null) ?: context.filesDir).path
+        return fileTransferHome(context)
     }
 
     fun select(uri: Uri, flags: Int, share: Boolean): JSONObject {

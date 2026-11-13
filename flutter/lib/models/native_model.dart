@@ -175,7 +175,8 @@ class PlatformFFI {
         if (isAndroid) {
           // Android file transfer uses app-specific storage. User-selected
           // files enter and leave this workspace through the system picker.
-          _homeDir = (await getExternalStorageDirectory())?.path ??
+          _homeDir = await invokeMethodWithResult<String>('file_transfer_home') ??
+              (await getExternalStorageDirectory())?.path ??
               (await getApplicationSupportDirectory()).path;
         } else if (isIOS) {
           // The previous code was `_homeDir = (await getDownloadsDirectory())?.path ?? '';`,
